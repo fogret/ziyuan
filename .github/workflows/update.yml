@@ -1,0 +1,35 @@
+name: Auto Update IPTV
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # 每 6 小时自动更新一次
+  workflow_dispatch:        # 手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        pip install requests
+
+    - name: Run main.py
+      run: |
+        python main.py
+
+    - name: Commit and push
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git add .
+        git commit -m "Auto update IPTV" || echo "No changes"
+        git push
