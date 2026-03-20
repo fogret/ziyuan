@@ -1,5 +1,6 @@
 import requests
 import re
+import time
 
 OUTPUT = "live"
 
@@ -32,28 +33,22 @@ GUIZHOU_MAP = {
     "guizhou": "贵州"
 }
 
-GUIZHOU_KEYS = list(GUIZHOU_MAP.values())  # 中文关键词
+GUIZHOU_KEYS = list(GUIZHOU_MAP.values())
 MOVIE_KEYS = ["电影", "movie", "film", "影"]
 
 
 def clean_name(name):
-    """洗名：去垃圾后缀、符号、格式化"""
     name = name.lower()
-
     for bad in ["_hd", "_sd", "_4k", "_1080p", "_720p", "-hd", "-sd", "-4k"]:
         name = name.replace(bad, "")
-
     for bad in ["live", "stream", "tv"]:
         name = name.replace(bad, "")
-
     for s in ["_", "-", "."]:
         name = name.replace(s, "")
-
     return name
 
 
 def to_chinese(name):
-    """将英文地名转为中文（如果能识别）"""
     for en, zh in GUIZHOU_MAP.items():
         if en in name:
             return zh + name.replace(en, "")
@@ -61,31 +56,22 @@ def to_chinese(name):
 
 
 def classify(name):
-    """分类为：央视频道、贵州频道、数字频道、电影频道"""
-
-    # 央视频道
     m = CCTV.search(name)
     if m:
         num = m.group(1)
         return f"CCTV{num}", "央视频道"
 
-    # 贵州频道（中文或英文）
     if any(k in name for k in GUIZHOU_KEYS) or any(en in name for en in GUIZHOU_MAP.keys()):
         return to_chinese(name), "贵州频道"
 
-    # 电影频道
     if any(k in name for k in MOVIE_KEYS):
         return name, "电影频道"
 
-    # 数字频道（兜底）
-        return name, "数字频道"
+    return name, "数字频道"
 
 
 def fetch(keyword):
-    """网页搜索 + UA"""
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
     try:
         url = SEARCH_URL + keyword
         resp = requests.get(url, headers=headers, timeout=10)
@@ -96,16 +82,28 @@ def fetch(keyword):
 
 
 def extract(text):
-    """从 HTML 中提取所有 m3u8"""
     return PATTERN.findall(text)
 
 
+def test_url(url):
+    """智能测速：只保留能播的源"""
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        resp = requests.head(url, headers=headers, timeout=3)
+        if resp.status_code == 200:
+            return True
+    except:
+        pass
+    return False
+
+
 def main():
-    print("开始：抓取(HTML) + 洗名 + 中文化 + 分类 + 去重 + 排序 + 输出 live ...")
+    print("开始：抓取 + 测速 + 过滤坏源 + 洗名 + 中文化 + 分类 + 排序 + 输出 live ...")
 
     items = []
     seen = set()
 
+    # 1. 抓取所有源
     for kw in KEYWORDS:
         print(f"→ 搜索：{kw}")
         html = fetch(kw)
@@ -122,7 +120,17 @@ def main():
             title, group = classify(name)
             items.append((title, group, url))
 
-    # 排序规则
+    print(f"抓取完成，共 {len(items)} 条，开始测速...")
+
+    # 2. 智能测速（过滤坏源）
+    good = []
+    for title, group, url in items:
+        if test_url(url):
+            good.append((title, group, url))
+
+    print(f"测速完成，可用源：{len(good)} 条")
+
+    # 3. 排序
     order = {
         "央视频道": 1,
         "贵州频道": 2,
@@ -130,7 +138,6 @@ def main():
         "数字频道": 4
     }
 
-    # 贵州内部排序
     guizhou_order = {
         "贵阳": 1, "遵义": 2, "六盘水": 3, "安顺": 4,
         "毕节": 5, "铜仁": 6, "凯里": 7, "黔东南": 8,
@@ -145,16 +152,16 @@ def main():
                     return (order[group], guizhou_order[k], title)
         return (order[group], title)
 
-    items.sort(key=sort_key)
+    good.sort(key=sort_key)
 
-    # 输出
+    # 4. 输出
     with open(OUTPUT, "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n")
-        for title, group, url in items:
+        for title, group, url in good:
             f.write(f'#EXTINF:-1 tvg-name="{title}" group-title="{group}",{title}\n')
             f.write(url + "\n")
 
-    print(f"\n完成，共 {len(items)} 条频道")
+    print(f"\n最终可用频道：{len(good)} 条")
     print(f"已生成：{OUTPUT}")
 
 
