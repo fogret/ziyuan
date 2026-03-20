@@ -153,7 +153,7 @@ def main():
             f.write(f'#EXTINF:-1 tvg-name="{title}" group-title="{group}",{title}\n')
             f.write(url + "\n")
 
-    print(f"\n完成，共 {} 条频道".format(len(items)))
+    print(f"\n完成，共 {len(items)} 条频道")
     print(f"已生成：{OUTPUT}")
 
 
