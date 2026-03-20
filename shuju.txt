@@ -1,0 +1,252 @@
+# 央视频道（主源 + 备用源 1 + 备用源 2）
+CCTV-1 综合,http://[电信CDN]/PLTV/88888888/224/3221225804/index.m3u8
+CCTV-1 综合,http://[CTC]/PLTV/88888888/224/3221226010/index.m3u8
+CCTV-1 综合,http://[OTT]/live/cctv1/index.m3u8
+
+CCTV-2 财经,http://[电信CDN]/PLTV/88888888/224/3221225612/index.m3u8
+CCTV-2 财经,http://[CTC]/PLTV/88888888/224/3221226008/index.m3u8
+CCTV-2 财经,http://[OTT]/live/cctv2/index.m3u8
+
+CCTV-3 综艺,http://[电信CDN]/PLTV/88888888/224/3221225799/index.m3u8
+CCTV-3 综艺,http://[CTC]/PLTV/88888888/224/3221226006/index.m3u8
+CCTV-3 综艺,http://[OTT]/live/cctv3/index.m3u8
+
+CCTV-4 中文国际,http://[电信CDN]/PLTV/88888888/224/3221225784/index.m3u8
+CCTV-4 中文国际,http://[CTC]/PLTV/88888888/224/3221226004/index.m3u8
+CCTV-4 中文国际,http://[OTT]/live/cctv4/index.m3u8
+
+CCTV-5 体育,http://[电信CDN]/PLTV/88888888/224/3221225801/index.m3u8
+CCTV-5 体育,http://[CTC]/PLTV/88888888/224/3221226002/index.m3u8
+CCTV-5 体育,http://[OTT]/live/cctv5/index.m3u8
+
+CCTV-5+ 体育赛事,http://[电信CDN]/PLTV/88888888/224/3221225761/index.m3u8
+CCTV-5+ 体育赛事,http://[CTC]/PLTV/88888888/224/3221225999/index.m3u8
+CCTV-5+ 体育赛事,http://[OTT]/live/cctv5p/index.m3u8
+
+CCTV-6 电影,http://[电信CDN]/PLTV/88888888/224/3221225795/index.m3u8
+CCTV-6 电影,http://[CTC]/PLTV/88888888/224/3221225997/index.m3u8
+CCTV-6 电影,http://[OTT]/live/cctv6/index.m3u8
+
+CCTV-7 国防军事,http://[电信CDN]/PLTV/88888888/224/3221225733/index.m3u8
+CCTV-7 国防军事,http://[CTC]/PLTV/88888888/224/3221225995/index.m3u8
+CCTV-7 国防军事,http://[OTT]/live/cctv7/index.m3u8
+
+CCTV-8 电视剧,http://[电信CDN]/PLTV/88888888/224/3221225800/index.m3u8
+CCTV-8 电视剧,http://[CTC]/PLTV/88888888/224/3221225993/index.m3u8
+CCTV-8 电视剧,http://[OTT]/live/cctv8/index.m3u8
+
+CCTV-9 纪录,http://[电信CDN]/PLTV/88888888/224/3221225734/index.m3u8
+CCTV-9 纪录,http://[CTC]/PLTV/88888888/224/3221225991/index.m3u8
+CCTV-9 纪录,http://[OTT]/live/cctv9/index.m3u8
+
+CCTV-10 科教,http://[电信CDN]/PLTV/88888888/224/3221225735/index.m3u8
+CCTV-10 科教,http://[CTC]/PLTV/88888888/224/3221225989/index.m3u8
+CCTV-10 科教,http://[OTT]/live/cctv10/index.m3u8
+
+CCTV-11 戏曲,http://[电信CDN]/PLTV/88888888/224/3221225736/index.m3u8
+CCTV-11 戏曲,http://[CTC]/PLTV/88888888/224/3221225987/index.m3u8
+CCTV-11 戏曲,http://[OTT]/live/cctv11/index.m3u8
+
+CCTV-12 社会与法,http://[电信CDN]/PLTV/88888888/224/3221225737/index.m3u8
+CCTV-12 社会与法,http://[CTC]/PLTV/88888888/224/3221225985/index.m3u8
+CCTV-12 社会与法,http://[OTT]/live/cctv12/index.m3u8
+
+CCTV-13 新闻,http://[电信CDN]/PLTV/88888888/224/3221225829/index.m3u8
+CCTV-13 新闻,http://[CTC]/PLTV/88888888/224/3221225983/index.m3u8
+CCTV-13 新闻,http://[OTT]/live/cctv13/index.m3u8
+
+CCTV-14 少儿,http://[电信CDN]/PLTV/88888888/224/3221225738/index.m3u8
+CCTV-14 少儿,http://[CTC]/PLTV/88888888/224/3221225981/index.m3u8
+CCTV-14 少儿,http://[OTT]/live/cctv14/index.m3u8
+
+CCTV-15 音乐,http://[电信CDN]/PLTV/88888888/224/3221225739/index.m3u8
+CCTV-15 音乐,http://[CTC]/PLTV/88888888/224/3221225979/index.m3u8
+CCTV-15 音乐,http://[OTT]/live/cctv15/index.m3u8
+
+CCTV-16 奥林匹克,http://[电信CDN]/PLTV/88888888/224/3221225907/index.m3u8
+CCTV-16 奥林匹克,http://[CTC]/PLTV/88888888/224/3221225977/index.m3u8
+CCTV-16 奥林匹克,http://[OTT]/live/cctv16/index.m3u8
+
+CCTV-17 农业农村,http://[电信CDN]/PLTV/88888888/224/3221225908/index.m3u8
+CCTV-17 农业农村,http://[CTC]/PLTV/88888888/224/3221225975/index.m3u8
+CCTV-17 农业农村,http://[OTT]/live/cctv17/index.m3u8
+
+
+# 卫视频道（主源 + 备用源 1 + 备用源 2）
+北京卫视,http://[电信CDN]/PLTV/88888888/224/3221225728/index.m3u8
+北京卫视,http://[CTC]/PLTV/88888888/224/3221226201/index.m3u8
+北京卫视,http://[OTT]/live/btv1/index.m3u8
+
+东方卫视,http://[电信CDN]/PLTV/88888888/224/3221225730/index.m3u8
+东方卫视,http://[CTC]/PLTV/88888888/224/3221226203/index.m3u8
+东方卫视,http://[OTT]/live/dfws/index.m3u8
+
+湖南卫视,http://[电信CDN]/PLTV/88888888/224/3221225745/index.m3u8
+湖南卫视,http://[CTC]/PLTV/88888888/224/3221226205/index.m3u8
+湖南卫视,http://[OTT]/live/hunan/index.m3u8
+
+浙江卫视,http://[电信CDN]/PLTV/88888888/224/3221225747/index.m3u8
+浙江卫视,http://[CTC]/PLTV/88888888/224/3221226207/index.m3u8
+浙江卫视,http://[OTT]/live/zhejiang/index.m3u8
+
+江苏卫视,http://[电信CDN]/PLTV/88888888/224/3221225749/index.m3u8
+江苏卫视,http://[CTC]/PLTV/88888888/224/3221226209/index.m3u8
+江苏卫视,http://[OTT]/live/jiangsu/index.m3u8
+
+安徽卫视,http://[电信CDN]/PLTV/88888888/224/3221225751/index.m3u8
+安徽卫视,http://[CTC]/PLTV/88888888/224/3221226211/index.m3u8
+安徽卫视,http://[OTT]/live/anhui/index.m3u8
+
+广东卫视,http://[电信CDN]/PLTV/88888888/224/3221225753/index.m3u8
+广东卫视,http://[CTC]/PLTV/88888888/224/3221226213/index.m3u8
+广东卫视,http://[OTT]/live/guangdong/index.m3u8
+
+深圳卫视,http://[电信CDN]/PLTV/88888888/224/3221225755/index.m3u8
+深圳卫视,http://[CTC]/PLTV/88888888/224/3221226215/index.m3u8
+深圳卫视,http://[OTT]/live/shenzhen/index.m3u8
+
+山东卫视,http://[电信CDN]/PLTV/88888888/224/3221225757/index.m3u8
+山东卫视,http://[CTC]/PLTV/88888888/224/3221226217/index.m3u8
+山东卫视,http://[OTT]/live/shandong/index.m3u8
+
+湖北卫视,http://[电信CDN]/PLTV/88888888/224/3221225759/index.m3u8
+湖北卫视,http://[CTC]/PLTV/88888888/224/3221226219/index.m3u8
+湖北卫视,http://[OTT]/live/hubei/index.m3u8
+
+四川卫视,http://[电信CDN]/PLTV/88888888/224/3221225763/index.m3u8
+四川卫视,http://[CTC]/PLTV/88888888/224/3221226221/index.m3u8
+四川卫视,http://[OTT]/live/sichuan/index.m3u8
+
+重庆卫视,http://[电信CDN]/PLTV/88888888/224/3221225765/index.m3u8
+重庆卫视,http://[CTC]/PLTV/88888888/224/3221226223/index.m3u8
+重庆卫视,http://[OTT]/live/chongqing/index.m3u8
+
+天津卫视,http://[电信CDN]/PLTV/88888888/224/3221225767/index.m3u8
+天津卫视,http://[CTC]/PLTV/88888888/224/3221226225/index.m3u8
+天津卫视,http://[OTT]/live/tianjin/index.m3u8
+
+辽宁卫视,http://[电信CDN]/PLTV/88888888/224/3221225769/index.m3u8
+辽宁卫视,http://[CTC]/PLTV/88888888/224/3221226227/index.m3u8
+辽宁卫视,http://[OTT]/live/liaoning/index.m3u8
+
+黑龙江卫视,http://[电信CDN]/PLTV/88888888/224/3221225771/index.m3u8
+黑龙江卫视,http://[CTC]/PLTV/88888888/224/3221226229/index.m3u8
+黑龙江卫视,http://[OTT]/live/heilongjiang/index.m3u8
+
+吉林卫视,http://[电信CDN]/PLTV/88888888/224/3221225773/index.m3u8
+吉林卫视,http://[CTC]/PLTV/88888888/224/3221226231/index.m3u8
+吉林卫视,http://[OTT]/live/jilin/index.m3u8
+
+河南卫视,http://[电信CDN]/PLTV/88888888/224/3221225775/index.m3u8
+河南卫视,http://[CTC]/PLTV/88888888/224/3221226233/index.m3u8
+河南卫视,http://[OTT]/live/henan/index.m3u8
+
+河北卫视,http://[电信CDN]/PLTV/88888888/224/3221225777/index.m3u8
+河北卫视,http://[CTC]/PLTV/88888888/224/3221226235/index.m3u8
+河北卫视,http://[OTT]/live/hebei/index.m3u8
+
+山西卫视,http://[电信CDN]/PLTV/88888888/224/3221225779/index.m3u8
+山西卫视,http://[CTC]/PLTV/88888888/224/3221226237/index.m3u8
+山西卫视,http://[OTT]/live/shanxi/index.m3u8
+
+陕西卫视,http://[电信CDN]/PLTV/88888888/224/3221225781/index.m3u8
+陕西卫视,http://[CTC]/PLTV/88888888/224/3221226239/index.m3u8
+陕西卫视,http://[OTT]/live/shaanxi/index.m3u8
+
+广西卫视,http://[电信CDN]/PLTV/88888888/224/3221225783/index.m3u8
+广西卫视,http://[CTC]/PLTV/88888888/224/3221226241/index.m3u8
+广西卫视,http://[OTT]/live/guangxi/index.m3u8
+
+云南卫视,http://[电信CDN]/PLTV/88888888/224/3221225785/index.m3u8
+云南卫视,http://[CTC]/PLTV/88888888/224/3221226243/index.m3u8
+云南卫视,http://[OTT]/live/yunnan/index.m3u8
+
+贵州卫视,http://[电信CDN]/PLTV/88888888/224/3221225787/index.m3u8
+贵州卫视,http://[CTC]/PLTV/88888888/224/3221226245/index.m3u8
+贵州卫视,http://[OTT]/live/guizhou/index.m3u8
+
+
+# 贵州频道（主源 + 备用源 1 + 备用源 2）
+贵阳综合,http://[贵州电信]/PLTV/88888888/224/3221225902/index.m3u8
+贵阳综合,http://[CTC]/PLTV/88888888/224/3221226401/index.m3u8
+贵阳综合,http://[OTT]/live/guiyang/index.m3u8
+
+遵义综合,http://[贵州电信]/PLTV/88888888/224/3221225903/index.m3u8
+遵义综合,http://[CTC]/PLTV/88888888/224/3221226402/index.m3u8
+遵义综合,http://[OTT]/live/zunyi/index.m3u8
+
+六盘水综合,http://[贵州电信]/PLTV/88888888/224/3221225904/index.m3u8
+六盘水综合,http://[CTC]/PLTV/88888888/224/3221226403/index.m3u8
+六盘水综合,http://[OTT]/live/liupanshui/index.m3u8
+
+安顺综合,http://[贵州电信]/PLTV/88888888/224/3221225905/index.m3u8
+安顺综合,http://[CTC]/PLTV/88888888/224/3221226404/index.m3u8
+安顺综合,http://[OTT]/live/anshun/index.m3u8
+
+毕节综合,http://[贵州电信]/PLTV/88888888/224/3221225906/index.m3u8
+毕节综合,http://[CTC]/PLTV/88888888/224/3221226405/index.m3u8
+毕节综合,http://[OTT]/live/bijie/index.m3u8
+
+铜仁综合,http://[贵州电信]/PLTV/88888888/224/3221225907/index.m3u8
+铜仁综合,http://[CTC]/PLTV/88888888/224/3221226406/index.m3u8
+铜仁综合,http://[OTT]/live/tongren/index.m3u8
+
+凯里综合,http://[贵州电信]/PLTV/88888888/224/3221225908/index.m3u8
+凯里综合,http://[CTC]/PLTV/88888888/224/3221226407/index.m3u8
+凯里综合,http://[OTT]/live/kaili/index.m3u8
+
+黔东南综合,http://[贵州电信]/PLTV/88888888/224/3221225909/index.m3u8
+黔东南综合,http://[CTC]/PLTV/88888888/224/3221226408/index.m3u8
+黔东南综合,http://[OTT]/live/qiandongnan/index.m3u8
+
+都匀综合,http://[贵州电信]/PLTV/88888888/224/3221225910/index.m3u8
+都匀综合,http://[CTC]/PLTV/88888888/224/3221226409/index.m3u8
+都匀综合,http://[OTT]/live/duyun/index.m3u8
+
+黔南综合,http://[贵州电信]/PLTV/88888888/224/3221225911/index.m3u8
+黔南综合,http://[CTC]/PLTV/88888888/224/3221226410/index.m3u8
+黔南综合,http://[OTT]/live/qiannan/index.m3u8
+
+兴义综合,http://[贵州电信]/PLTV/88888888/224/3221225912/index.m3u8
+兴义综合,http://[CTC]/PLTV/88888888/224/3221226411/index.m3u8
+兴义综合,http://[OTT]/live/xingyi/index.m3u8
+
+黔西南综合,http://[贵州电信]/PLTV/88888888/224/3221225913/index.m3u8
+黔西南综合,http://[CTC]/PLTV/88888888/224/3221226412/index.m3u8
+黔西南综合,http://[OTT]/live/qianxinan/index.m3u8
+
+
+# 影视频道（主源 + 备用源）
+CHC 电影,http://[电信CDN]/PLTV/88888888/224/3221225855/index.m3u8
+CHC 电影,http://[OTT]/live/chc/index.m3u8
+
+CHC 动作电影,http://[电信CDN]/PLTV/88888888/224/3221225857/index.m3u8
+CHC 动作电影,http://[OTT]/live/chc_action/index.m3u8
+
+CHC 家庭影院,http://[电信CDN]/PLTV/88888888/224/3221225859/index.m3u8
+CHC 家庭影院,http://[OTT]/live/chc_family/index.m3u8
+
+风云电影,http://[电信CDN]/PLTV/88888888/224/3221225861/index.m3u8
+风云电影,http://[OTT]/live/fy_movie/index.m3u8
+
+风云剧场,http://[电信CDN]/PLTV/88888888/224/3221225863/index.m3u8
+风云剧场,http://[OTT]/live/fy_drama/index.m3u8
+
+怀旧剧场,http://[电信CDN]/PLTV/88888888/224/3221225865/index.m3u8
+怀旧剧场,http://[OTT]/live/retro_drama/index.m3u8
+
+第一剧场,http://[电信CDN]/PLTV/88888888/224/3221225867/index.m3u8
+第一剧场,http://[OTT]/live/first_drama/index.m3u8
+
+
+# 音乐频道（主源 + 备用源）
+CCTV-15 音乐,http://[电信CDN]/PLTV/88888888/224/3221225739/index.m3u8
+CCTV-15 音乐,http://[OTT]/live/cctv15/index.m3u8
+
+风云音乐,http://[电信CDN]/PLTV/88888888/224/3221225871/index.m3u8
+风云音乐,http://[OTT]/live/fy_music/index.m3u8
+
+音乐现场,http://[电信CDN]/PLTV/88888888/224/3221225873/index.m3u8
+音乐现场,http://[OTT]/live/music_live/index.m3u8
+
+MTV 音乐台,http://[OTT]/live/mtv/index.m3u8
