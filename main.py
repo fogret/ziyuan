@@ -78,8 +78,17 @@ def classify(name):
 
 
 def fetch(keyword):
+    """加入 UA 修复抓取失败问题"""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
     try:
-        resp = requests.get(SEARCH_URL, params={"keyword": keyword}, timeout=10)
+        resp = requests.get(
+            SEARCH_URL,
+            params={"keyword": keyword},
+            headers=headers,
+            timeout=10
+        )
         resp.raise_for_status()
         return resp.text
     except:
@@ -144,7 +153,7 @@ def main():
             f.write(f'#EXTINF:-1 tvg-name="{title}" group-title="{group}",{title}\n')
             f.write(url + "\n")
 
-    print(f"\n完成，共 {len(items)} 条频道")
+    print(f"\n完成，共 {} 条频道".format(len(items)))
     print(f"已生成：{OUTPUT}")
 
 
