@@ -1,112 +1,13 @@
 #EXTM3U
-# 央视频道（CCTV）
 #EXTINF:-1,CCTV-1 综合
-http://live.cooltv.top/tv/cctv1.m3u8
-#EXTINF:-1,CCTV-2 财经
-http://live.cooltv.top/tv/cctv2.m3u8
-#EXTINF:-1,CCTV-3 综艺
-http://live.cooltv.top/tv/cctv3.m3u8
-#EXTINF:-1,CCTV-4 中文国际
-http://live.cooltv.top/tv/cctv4.m3u8
-#EXTINF:-1,CCTV-5 体育
-http://live.cooltv.top/tv/cctv5.m3u8
-#EXTINF:-1,CCTV-5+ 体育赛事
-http://live.cooltv.top/tv/cctv5p.m3u8
-#EXTINF:-1,CCTV-6 电影
-http://live.cooltv.top/tv/cctv6.m3u8
-#EXTINF:-1,CCTV-7 国防军事
-http://live.cooltv.top/tv/cctv7.m3u8
-#EXTINF:-1,CCTV-8 电视剧
-http://live.cooltv.top/tv/cctv8.m3u8
-#EXTINF:-1,CCTV-9 纪录
-http://live.cooltv.top/tv/cctv9.m3u8
-#EXTINF:-1,CCTV-10 科教
-http://live.cooltv.top/tv/cctv10.m3u8
-#EXTINF:-1,CCTV-11 戏曲
-http://live.cooltv.top/tv/cctv11.m3u8
-#EXTINF:-1,CCTV-12 社会与法
-http://live.cooltv.top/tv/cctv12.m3u8
+https://live-play.cctv.cn/live/cctv1.m3u8
 #EXTINF:-1,CCTV-13 新闻
-http://live.cooltv.top/tv/cctv13.m3u8
-#EXTINF:-1,CCTV-14 少儿
-http://live.cooltv.top/tv/cctv14.m3u8
-#EXTINF:-1,CCTV-15 音乐
-http://live.cooltv.top/tv/cctv15.m3u8
-#EXTINF:-1,CCTV-16 奥林匹克
-http://live.cooltv.top/tv/cctv16.m3u8
-#EXTINF:-1,CCTV-17 农业农村
-http://live.cooltv.top/tv/cctv17.m3u8
-
-# 卫视频道
+https://live-play.cctvnews.cctv.com/cctv/merge_cctv13.m3u8
 #EXTINF:-1,湖南卫视
-http://live.cooltv.top/tv/hunan.m3u8
+https://live-hls.mgtv.com/live/hnws/index.m3u8
 #EXTINF:-1,浙江卫视
-http://live.cooltv.top/tv/zhejiang.m3u8
-#EXTINF:-1,江苏卫视
-http://live.cooltv.top/tv/jiangsu.m3u8
-#EXTINF:-1,东方卫视
-http://live.cooltv.top/tv/dongfang.m3u8
-#EXTINF:-1,北京卫视
-http://live.cooltv.top/tv/beijing.m3u8
-#EXTINF:-1,深圳卫视
-http://live.cooltv.top/tv/shenzhen.m3u8
-#EXTINF:-1,广东卫视
-http://live.cooltv.top/tv/guangdong.m3u8
-#EXTINF:-1,山东卫视
-http://live.cooltv.top/tv/shandong.m3u8
-#EXTINF:-1,湖北卫视
-http://live.cooltv.top/tv/hubei.m3u8
-#EXTINF:-1,重庆卫视
-http://live.cooltv.top/tv/chongqing.m3u8
-#EXTINF:-1,天津卫视
-http://live.cooltv.top/tv/tianjin.m3u8
-
-# 贵州频道
+https://hw-m-l.cztv.com/channels/lantian/channel01/1080p.m3u8
 #EXTINF:-1,贵州卫视
-http://live.cooltv.top/tv/guizhou.m3u8
+https://stream.guiyangtv.com/gyws/sd/live.m3u8
 #EXTINF:-1,贵阳综合
-http://live.cooltv.top/tv/guiyang.m3u8
-#EXTINF:-1,遵义综合
-http://live.cooltv.top/tv/zunyi.m3u8
-#EXTINF:-1,六盘水综合
-http://live.cooltv.top/tv/liupanshui.m3u8
-#EXTINF:-1,安顺综合
-http://live.cooltv.top/tv/anshun.m3u8
-#EXTINF:-1,毕节综合
-http://live.cooltv.top/tv/bijie.m3u8
-#EXTINF:-1,铜仁综合
-http://live.cooltv.top/tv/tongren.m3u8
-#EXTINF:-1,凯里综合
-http://live.cooltv.top/tv/kaili.m3u8
-#EXTINF:-1,黔东南综合
-http://live.cooltv.top/tv/qiandongnan.m3u8
-#EXTINF:-1,都匀综合
-http://live.cooltv.top/tv/duyun.m3u8
-#EXTINF:-1,黔南综合
-http://live.cooltv.top/tv/qiannan.m3u8
-#EXTINF:-1,兴义综合
-http://live.cooltv.top/tv/xingyi.m3u8
-#EXTINF:-1,黔西南综合
-http://live.cooltv.top/tv/qianxinan.m3u8
-
-# 电影频道
-#EXTINF:-1,CHC 电影
-http://live.cooltv.top/tv/chc.m3u8
-#EXTINF:-1,CHC 动作电影
-http://live.cooltv.top/tv/chc_action.m3u8
-#EXTINF:-1,CHC 家庭影院
-http://live.cooltv.top/tv/chc_family.m3u8
-#EXTINF:-1,风云电影
-http://live.cooltv.top/tv/fy_movie.m3u8
-#EXTINF:-1,怀旧剧场
-http://live.cooltv.top/tv/retro_drama.m3u8
-#EXTINF:-1,第一剧场
-http://live.cooltv.top/tv/first_drama.m3u8
-
-# 音乐频道
-#EXTINF:-1,风云音乐
-http://live.cooltv.top/tv/fy_music.m3u8
-#EXTINF:-1,音乐现场
-http://live.cooltv.top/tv/music_live.m3u8
-#EXTINF:-1,MTV 音乐台
-http://live.cooltv.top/tv/mtv.m3u8
+https://stream.guiyangtv.com/gyzh/sd/live.m3u8
