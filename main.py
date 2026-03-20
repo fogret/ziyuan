@@ -2,12 +2,17 @@ import requests
 import re
 
 OUTPUT = "live"
-SEARCH_URL = "https://tonkiang.us/api/search"
 
+# 网页搜索 URL（替代失效 API）
+SEARCH_URL = "https://tonkiang.us/?s="
+
+# 搜索关键词
 KEYWORDS = ["CCTV", "卫视", "贵州", "电影"]
 
+# 提取 m3u8 的正则
 PATTERN = re.compile(r'(https?://[^\s"\'<>]+?\.m3u8)', re.I)
 
+# CCTV 识别
 CCTV = re.compile(r'cctv(\d+)', re.I)
 
 # 贵州地名映射（用于中文化）
@@ -28,7 +33,6 @@ GUIZHOU_MAP = {
 }
 
 GUIZHOU_KEYS = list(GUIZHOU_MAP.values())  # 中文关键词
-
 MOVIE_KEYS = ["电影", "movie", "film", "影"]
 
 
@@ -74,21 +78,17 @@ def classify(name):
         return name, "电影频道"
 
     # 数字频道（兜底）
-    return name, "数字频道"
+        return name, "数字频道"
 
 
 def fetch(keyword):
-    """加入 UA 修复抓取失败问题"""
+    """网页搜索 + UA"""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     }
     try:
-        resp = requests.get(
-            SEARCH_URL,
-            params={"keyword": keyword},
-            headers=headers,
-            timeout=10
-        )
+        url = SEARCH_URL + keyword
+        resp = requests.get(url, headers=headers, timeout=10)
         resp.raise_for_status()
         return resp.text
     except:
@@ -96,11 +96,12 @@ def fetch(keyword):
 
 
 def extract(text):
+    """从 HTML 中提取所有 m3u8"""
     return PATTERN.findall(text)
 
 
 def main():
-    print("开始：抓取 + 洗名 + 中文化 + 分类 + 去重 + 排序 + 输出 live ...")
+    print("开始：抓取(HTML) + 洗名 + 中文化 + 分类 + 去重 + 排序 + 输出 live ...")
 
     items = []
     seen = set()
