@@ -1,14 +1,14 @@
 import requests
 import re
-import time
 
 OUTPUT = "live"
 
-# 网页搜索 URL（替代失效 API）
-SEARCH_URL = "https://tonkiang.us/?s="
-
-# 搜索关键词
-KEYWORDS = ["CCTV", "卫视", "贵州", "电影"]
+# 国内可抓取、可播放、可在 GitHub Actions 运行的 API
+SOURCE_URLS = [
+    "https://live.fanmingming.com/tv/m3u/global.m3u",
+    "https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u",
+    "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/cn.m3u"
+]
 
 # 提取 m3u8 的正则
 PATTERN = re.compile(r'(https?://[^\s"\'<>]+?\.m3u8)', re.I)
@@ -70,10 +70,9 @@ def classify(name):
     return name, "数字频道"
 
 
-def fetch(keyword):
+def fetch(url):
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
-        url = SEARCH_URL + keyword
         resp = requests.get(url, headers=headers, timeout=10)
         resp.raise_for_status()
         return resp.text
@@ -90,24 +89,22 @@ def test_url(url):
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
         resp = requests.head(url, headers=headers, timeout=3)
-        if resp.status_code == 200:
-            return True
+        return resp.status_code == 200
     except:
-        pass
-    return False
+        return False
 
 
 def main():
-    print("开始：抓取 + 测速 + 过滤坏源 + 洗名 + 中文化 + 分类 + 排序 + 输出 live ...")
+    print("开始：抓取 + 合并 + 测速 + 过滤坏源 + 分类 + 排序 + 输出 live ...")
 
     items = []
     seen = set()
 
-    # 1. 抓取所有源
-    for kw in KEYWORDS:
-        print(f"→ 搜索：{kw}")
-        html = fetch(kw)
-        urls = extract(html)
+    # 1. 多源抓取
+    for src in SOURCE_URLS:
+        print(f"→ 抓取：{src}")
+        text = fetch(src)
+        urls = extract(text)
 
         for url in urls:
             if url in seen:
@@ -122,7 +119,7 @@ def main():
 
     print(f"抓取完成，共 {len(items)} 条，开始测速...")
 
-    # 2. 智能测速（过滤坏源）
+    # 2. 智能测速
     good = []
     for title, group, url in items:
         if test_url(url):
