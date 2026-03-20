@@ -96,4 +96,57 @@ def main():
     items = []
     seen = set()
 
-    for
+    for kw in KEYWORDS:
+        print(f"→ 搜索：{kw}")
+        html = fetch(kw)
+        urls = extract(html)
+
+        for url in urls:
+            if url in seen:
+                continue
+            seen.add(url)
+
+            raw = url.lower().split("/")[-1].replace(".m3u8", "")
+            name = clean_name(raw)
+
+            title, group = classify(name)
+            items.append((title, group, url))
+
+    # 排序规则
+    order = {
+        "央视频道": 1,
+        "贵州频道": 2,
+        "电影频道": 3,
+        "数字频道": 4
+    }
+
+    # 贵州内部排序
+    guizhou_order = {
+        "贵阳": 1, "遵义": 2, "六盘水": 3, "安顺": 4,
+        "毕节": 5, "铜仁": 6, "凯里": 7, "黔东南": 8,
+        "都匀": 9, "黔南": 10, "兴义": 11, "黔西南": 12
+    }
+
+    def sort_key(item):
+        title, group, _ = item
+        if group == "贵州频道":
+            for k in guizhou_order:
+                if k in title:
+                    return (order[group], guizhou_order[k], title)
+        return (order[group], title)
+
+    items.sort(key=sort_key)
+
+    # 输出
+    with open(OUTPUT, "w", encoding="utf-8") as f:
+        f.write("#EXTM3U\n")
+        for title, group, url in items:
+            f.write(f'#EXTINF:-1 tvg-name="{title}" group-title="{group}",{title}\n')
+            f.write(url + "\n")
+
+    print(f"\n完成，共 {len(items)} 条频道")
+    print(f"已生成：{OUTPUT}")
+
+
+if __name__ == "__main__":
+    main()
