@@ -7,30 +7,30 @@ import requests
 # ============================
 
 CDN_DIANTONG = [
-    "http://39.134.24.162",
-    "http://39.134.24.161",
-    "http://39.134.24.166",
-    "http://39.134.24.165",
-    "http://39.134.24.160"
+    "39.134.24.162",
+    "39.134.24.161",
+    "39.134.24.166",
+    "39.134.24.165",
+    "39.134.24.160"
 ]
 
 CDN_CTC = [
-    "http://111.20.105.60",
-    "http://111.20.105.61",
-    "http://111.20.105.62",
-    "http://111.20.105.63"
+    "111.20.105.60",
+    "111.20.105.61",
+    "111.20.105.62",
+    "111.20.105.63"
 ]
 
 CDN_GUIZHOU = [
-    "http://183.62.140.14",
-    "http://183.62.140.15",
-    "http://183.62.140.16"
+    "183.62.140.14",
+    "183.62.140.15",
+    "183.62.140.16"
 ]
 
 CDN_OTT = [
-    "http://ott.mobaibox.com",
-    "http://live.cooltv.top",
-    "http://tv.iptvcloud.top"
+    "ott.mobaibox.com",
+    "live.cooltv.top",
+    "tv.iptvcloud.top"
 ]
 
 # ============================
@@ -47,7 +47,7 @@ def in_github_actions():
 def test_speed(url):
     try:
         start = time.time()
-        r = requests.get(url, timeout=1)
+        r = requests.get("http://" + url, timeout=1)
         if r.status_code == 200:
             return time.time() - start
     except:
@@ -55,7 +55,7 @@ def test_speed(url):
     return 999
 
 def pick_fastest(cdns):
-    best = None
+    best = cdns[0]
     best_time = 999
     for cdn in cdns:
         t = test_speed(cdn)
@@ -88,17 +88,36 @@ def load_sources():
     return sources
 
 # ============================
+#  URL 修复函数（核心）
+# ============================
+
+def fix_url(url, dcdn, ctc, gzdn, ott):
+    # 去掉重复 http://
+    url = url.replace("http://http://", "http://")
+    url = url.replace("http://", "")
+
+    # 替换占位符
+    url = url.replace("[电信CDN]", dcdn)
+    url = url.replace("[CTC]", ctc)
+    url = url.replace("[贵州电信]", gzdn)
+    url = url.replace("[OTT]", ott)
+
+    # IPTV 源自动补端口和参数
+    if "PLTV" in url:
+        return f"http://{url}:6610?IASHttpSessionId=OTT"
+
+    # OTT 源保持原样
+    return f"http://{url}"
+
+# ============================
 #  替换占位符
 # ============================
 
 def replace_placeholders(sources, dcdn, ctc, gzdn, ott):
     result = []
     for name, url in sources:
-        url = url.replace("[电信CDN]", dcdn)
-        url = url.replace("[CTC]", ctc)
-        url = url.replace("[贵州电信]", gzdn)
-        url = url.replace("[OTT]", ott)
-        result.append((name, url))
+        fixed = fix_url(url, dcdn, ctc, gzdn, ott)
+        result.append((name, fixed))
     return result
 
 # ============================
@@ -120,12 +139,10 @@ def main():
 
     if in_github_actions():
         print("⚠️ GitHub Actions 环境检测到 → 跳过测速，使用默认 CDN")
-
         dcdn = CDN_DIANTONG[0]
         ctc = CDN_CTC[0]
         gzdn = CDN_GUIZHOU[0]
         ott = CDN_OTT[0]
-
     else:
         print("⏳ 正在测速电信 CDN...")
         dcdn = pick_fastest(CDN_DIANTONG)
@@ -148,7 +165,7 @@ def main():
     print("\n⏳ 正在读取 shuju.txt...")
     sources = load_sources()
 
-    print("⏳ 正在替换占位符...")
+    print("⏳ 正在修复 URL...")
     final_sources = replace_placeholders(sources, dcdn, ctc, gzdn, ott)
 
     print("⏳ 正在生成 m3u...")
