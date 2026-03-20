@@ -1,171 +1,143 @@
+import os
+import time
 import requests
-import re
 
-OUTPUT = "live"
+# ============================
+#  CDN 列表（自动测速）
+# ============================
 
-# 国内可抓取、可播放、可在 GitHub Actions 运行的 API
-SOURCE_URLS = [
-    "https://live.fanmingming.com/tv/m3u/global.m3u",
-    "https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u",
-    "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/cn.m3u"
+CDN_DIANTONG = [
+    "http://39.134.24.162",
+    "http://39.134.24.161",
+    "http://39.134.24.166",
+    "http://39.134.24.165",
+    "http://39.134.24.160"
 ]
 
-# 提取 m3u8 的正则
-PATTERN = re.compile(r'(https?://[^\s"\'<>]+?\.m3u8)', re.I)
+CDN_CTC = [
+    "http://111.20.105.60",
+    "http://111.20.105.61",
+    "http://111.20.105.62",
+    "http://111.20.105.63"
+]
 
-# CCTV 识别
-CCTV = re.compile(r'cctv(\d+)', re.I)
+CDN_GUIZHOU = [
+    "http://183.62.140.14",
+    "http://183.62.140.15",
+    "http://183.62.140.16"
+]
 
-# 贵州地名映射
-GUIZHOU_MAP = {
-    "guiyang": "贵阳",
-    "zunyi": "遵义",
-    "liupanshui": "六盘水",
-    "anshun": "安顺",
-    "bijie": "毕节",
-    "tongren": "铜仁",
-    "kaili": "凯里",
-    "qiandongnan": "黔东南",
-    "duyun": "都匀",
-    "qiannan": "黔南",
-    "xingyi": "兴义",
-    "qianxinan": "黔西南",
-    "guizhou": "贵州"
-}
+CDN_OTT = [
+    "http://ott.mobaibox.com",
+    "http://live.cooltv.top",
+    "http://tv.iptvcloud.top"
+]
 
-GUIZHOU_KEYS = list(GUIZHOU_MAP.values())
+# ============================
+#  测速函数
+# ============================
 
-# 影视频道关键词
-MOVIE_KEYS = ["电影", "影视", "影迷", "影", "movie", "film"]
-
-# 音乐频道关键词
-MUSIC_KEYS = ["音乐", "mtv", "音悦", "music", "kpop", "hits"]
-
-
-def clean_name(name):
-    name = name.lower()
-    for bad in ["_hd", "_sd", "_4k", "_1080p", "_720p", "-hd", "-sd", "-4k"]:
-        name = name.replace(bad, "")
-    for bad in ["live", "stream", "tv"]:
-        name = name.replace(bad, "")
-    for s in ["_", "-", "."]:
-        name = name.replace(s, "")
-    return name
-
-
-def to_chinese(name):
-    for en, zh in GUIZHOU_MAP.items():
-        if en in name:
-            return zh + name.replace(en, "")
-    return name
-
-
-def classify(name):
-    # CCTV
-    m = CCTV.search(name)
-    if m:
-        num = m.group(1)
-        return f"CCTV{num}", "央视频道"
-
-    # 贵州频道
-    if any(k in name for k in GUIZHOU_KEYS) or any(en in name for en in GUIZHOU_MAP.keys()):
-        return to_chinese(name), "贵州频道"
-
-    # 卫视
-    if "卫视" in name:
-        return name, "卫视频道"
-
-    # 影视频道
-    if any(k in name for k in MOVIE_KEYS):
-        return name, "影视频道"
-
-    # 音乐频道
-    if any(k in name for k in MUSIC_KEYS):
-        return name, "音乐频道"
-
-    return None, None  # 不要地方台
-
-
-def fetch(url):
-    headers = {"User-Agent": "Mozilla/5.0"}
+def test_speed(url):
     try:
-        resp = requests.get(url, headers=headers, timeout=10)
-        resp.raise_for_status()
-        return resp.text
+        start = time.time()
+        r = requests.get(url, timeout=1)
+        if r.status_code == 200:
+            return time.time() - start
     except:
-        return ""
+        return 999
+    return 999
 
+def pick_fastest(cdns):
+    best = None
+    best_time = 999
+    for cdn in cdns:
+        t = test_speed(cdn)
+        if t < best_time:
+            best_time = t
+            best = cdn
+    return best
 
-def extract(text):
-    return PATTERN.findall(text)
+# ============================
+#  读取 shuju.txt
+# ============================
 
+def load_sources():
+    if not os.path.exists("shuju.txt"):
+        print("❌ 未找到 shuju.txt")
+        exit()
 
-def test_url(url):
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        resp = requests.head(url, headers=headers, timeout=3)
-        return resp.status_code == 200
-    except:
-        return False
+    with open("shuju.txt", "r", encoding="utf-8") as f:
+        lines = f.readlines()
 
+    sources = []
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "," not in line:
+            continue
+        name, url = line.split(",", 1)
+        sources.append((name, url))
+    return sources
+
+# ============================
+#  替换占位符
+# ============================
+
+def replace_placeholders(sources, dcdn, ctc, gzdn, ott):
+    result = []
+    for name, url in sources:
+        url = url.replace("[电信CDN]", dcdn)
+        url = url.replace("[CTC]", ctc)
+        url = url.replace("[贵州电信]", gzdn)
+        url = url.replace("[OTT]", ott)
+        result.append((name, url))
+    return result
+
+# ============================
+#  输出 m3u
+# ============================
+
+def save_m3u(sources):
+    with open("tvbox.m3u", "w", encoding="utf-8") as f:
+        f.write("#EXTM3U\n")
+        for name, url in sources:
+            f.write(f"#EXTINF:-1,{name}\n{url}\n")
+    print("✅ 已生成 tvbox.m3u")
+
+# ============================
+#  主流程
+# ============================
 
 def main():
-    print("开始：精准抓取 + 测速 + 过滤坏源 + 分类 + 排序 + 输出 live ...")
+    print("⏳ 正在测速电信 CDN...")
+    dcdn = pick_fastest(CDN_DIANTONG)
 
-    items = []
-    seen = set()
+    print("⏳ 正在测速全国电信 CTC CDN...")
+    ctc = pick_fastest(CDN_CTC)
 
-    # 抓取
-    for src in SOURCE_URLS:
-        print(f"→ 抓取：{src}")
-        text = fetch(src)
-        urls = extract(text)
+    print("⏳ 正在测速贵州电信 CDN...")
+    gzdn = pick_fastest(CDN_GUIZHOU)
 
-        for url in urls:
-            if url in seen:
-                continue
-            seen.add(url)
+    print("⏳ 正在测速 OTT CDN...")
+    ott = pick_fastest(CDN_OTT)
 
-            raw = url.lower().split("/")[-1].replace(".m3u8", "")
-            name = clean_name(raw)
+    print("\n⭐ 最终选择的最快 CDN：")
+    print("电信 IPTV =", dcdn)
+    print("全国 CTC =", ctc)
+    print("贵州电信 =", gzdn)
+    print("OTT =", ott)
 
-            title, group = classify(name)
-            if title is None:
-                continue  # 不要地方台
+    print("\n⏳ 正在读取 shuju.txt...")
+    sources = load_sources()
 
-            items.append((title, group, url))
+    print("⏳ 正在替换占位符...")
+    final_sources = replace_placeholders(sources, dcdn, ctc, gzdn, ott)
 
-    print(f"抓取完成，共 {len(items)} 条，开始测速...")
+    print("⏳ 正在生成 m3u...")
+    save_m3u(final_sources)
 
-    # 测速
-    good = []
-    for title, group, url in items:
-        if test_url(url):
-            good.append((title, group, url))
-
-    print(f"测速完成，可用源：{len(good)} 条")
-
-    # 排序
-    order = {
-        "央视频道": 1,
-        "卫视频道": 2,
-        "贵州频道": 3,
-        "影视频道": 4,
-        "音乐频道": 5
-    }
-
-    good.sort(key=lambda x: (order[x[1]], x[0]))
-
-    # 输出
-    with open(OUTPUT, "w", encoding="utf-8") as f:
-        f.write("#EXTM3U\n")
-        for title, group, url in good:
-            f.write(f'#EXTINF:-1 tvg-name="{title}" group-title="{group}",{title}\n')
-            f.write(url + "\n")
-
-    print(f"\n最终可用频道：{len(good)} 条")
-    print(f"已生成：{OUTPUT}")
-
+    print("\n🎉 完成！你的 IPTV 列表已经准备好。")
 
 if __name__ == "__main__":
     main()
