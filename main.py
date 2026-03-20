@@ -2,10 +2,6 @@ import os
 import time
 import requests
 
-# ============================
-#  CDN 列表（自动测速）
-# ============================
-
 CDN_DIANTONG = [
     "39.134.24.162",
     "39.134.24.161",
@@ -33,16 +29,8 @@ CDN_OTT = [
     "tv.iptvcloud.top"
 ]
 
-# ============================
-#  判断是否在 GitHub Actions
-# ============================
-
 def in_github_actions():
     return "GITHUB_ACTIONS" in os.environ
-
-# ============================
-#  测速函数
-# ============================
 
 def test_speed(url):
     try:
@@ -64,10 +52,6 @@ def pick_fastest(cdns):
             best = cdn
     return best
 
-# ============================
-#  读取 shuju.txt
-# ============================
-
 def load_sources():
     if not os.path.exists("shuju.txt"):
         print("❌ 未找到 shuju.txt")
@@ -87,13 +71,10 @@ def load_sources():
         sources.append((name, url))
     return sources
 
-# ============================
-#  URL 修复函数（核心）
-# ============================
-
+# ⭐⭐ 核心修复：正确拼接 IPTV URL ⭐⭐
 def fix_url(url, dcdn, ctc, gzdn, ott):
-    # 去掉重复 http://
-    url = url.replace("http://http://", "http://")
+
+    # 去掉所有 http://
     url = url.replace("http://", "")
 
     # 替换占位符
@@ -102,16 +83,13 @@ def fix_url(url, dcdn, ctc, gzdn, ott):
     url = url.replace("[贵州电信]", gzdn)
     url = url.replace("[OTT]", ott)
 
-    # IPTV 源自动补端口和参数
+    # IPTV 源（含 PLTV）
     if "PLTV" in url:
-        return f"http://{url}:6610?IASHttpSessionId=OTT"
+        # 正确格式： http://IP:6610/PLTV/.../index.m3u8?IASHttpSessionId=OTT
+        return f"http://{url.split('/')[0]}:6610/" + "/".join(url.split('/')[1:]) + "?IASHttpSessionId=OTT"
 
-    # OTT 源保持原样
+    # OTT 源
     return f"http://{url}"
-
-# ============================
-#  替换占位符
-# ============================
 
 def replace_placeholders(sources, dcdn, ctc, gzdn, ott):
     result = []
@@ -120,10 +98,6 @@ def replace_placeholders(sources, dcdn, ctc, gzdn, ott):
         result.append((name, fixed))
     return result
 
-# ============================
-#  输出 m3u
-# ============================
-
 def save_m3u(sources):
     with open("tvbox.m3u", "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n")
@@ -131,47 +105,29 @@ def save_m3u(sources):
             f.write(f"#EXTINF:-1,{name}\n{url}\n")
     print("✅ 已生成 tvbox.m3u")
 
-# ============================
-#  主流程
-# ============================
-
 def main():
 
     if in_github_actions():
-        print("⚠️ GitHub Actions 环境检测到 → 跳过测速，使用默认 CDN")
+        print("⚠️ GitHub Actions 环境 → 使用默认 CDN")
         dcdn = CDN_DIANTONG[0]
         ctc = CDN_CTC[0]
         gzdn = CDN_GUIZHOU[0]
         ott = CDN_OTT[0]
     else:
-        print("⏳ 正在测速电信 CDN...")
         dcdn = pick_fastest(CDN_DIANTONG)
-
-        print("⏳ 正在测速全国电信 CTC CDN...")
         ctc = pick_fastest(CDN_CTC)
-
-        print("⏳ 正在测速贵州电信 CDN...")
         gzdn = pick_fastest(CDN_GUIZHOU)
-
-        print("⏳ 正在测速 OTT CDN...")
         ott = pick_fastest(CDN_OTT)
 
-    print("\n⭐ 最终使用的 CDN：")
-    print("电信 IPTV =", dcdn)
-    print("全国 CTC =", ctc)
-    print("贵州电信 =", gzdn)
+    print("\n⭐ 使用 CDN：")
+    print("电信 =", dcdn)
+    print("CTC =", ctc)
+    print("贵州 =", gzdn)
     print("OTT =", ott)
 
-    print("\n⏳ 正在读取 shuju.txt...")
     sources = load_sources()
-
-    print("⏳ 正在修复 URL...")
     final_sources = replace_placeholders(sources, dcdn, ctc, gzdn, ott)
-
-    print("⏳ 正在生成 m3u...")
     save_m3u(final_sources)
-
-    print("\n🎉 完成！你的 IPTV 列表已经准备好。")
 
 if __name__ == "__main__":
     main()
