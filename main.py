@@ -34,6 +34,13 @@ CDN_OTT = [
 ]
 
 # ============================
+#  判断是否在 GitHub Actions
+# ============================
+
+def in_github_actions():
+    return "GITHUB_ACTIONS" in os.environ
+
+# ============================
 #  测速函数
 # ============================
 
@@ -110,19 +117,29 @@ def save_m3u(sources):
 # ============================
 
 def main():
-    print("⏳ 正在测速电信 CDN...")
-    dcdn = pick_fastest(CDN_DIANTONG)
 
-    print("⏳ 正在测速全国电信 CTC CDN...")
-    ctc = pick_fastest(CDN_CTC)
+    if in_github_actions():
+        print("⚠️ GitHub Actions 环境检测到 → 跳过测速，使用默认 CDN")
 
-    print("⏳ 正在测速贵州电信 CDN...")
-    gzdn = pick_fastest(CDN_GUIZHOU)
+        dcdn = CDN_DIANTONG[0]
+        ctc = CDN_CTC[0]
+        gzdn = CDN_GUIZHOU[0]
+        ott = CDN_OTT[0]
 
-    print("⏳ 正在测速 OTT CDN...")
-    ott = pick_fastest(CDN_OTT)
+    else:
+        print("⏳ 正在测速电信 CDN...")
+        dcdn = pick_fastest(CDN_DIANTONG)
 
-    print("\n⭐ 最终选择的最快 CDN：")
+        print("⏳ 正在测速全国电信 CTC CDN...")
+        ctc = pick_fastest(CDN_CTC)
+
+        print("⏳ 正在测速贵州电信 CDN...")
+        gzdn = pick_fastest(CDN_GUIZHOU)
+
+        print("⏳ 正在测速 OTT CDN...")
+        ott = pick_fastest(CDN_OTT)
+
+    print("\n⭐ 最终使用的 CDN：")
     print("电信 IPTV =", dcdn)
     print("全国 CTC =", ctc)
     print("贵州电信 =", gzdn)
