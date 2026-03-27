@@ -1,6 +1,5 @@
 https://epg.pw/api/iptvlist?type=json
 https://api.github.com/meta
 https://tvapi.abcxyz.top/api/iptv
-
 https://raw.githubusercontent.com/yuanzl77/IPTV/main/live.txt
 
