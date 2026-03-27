@@ -1,5 +1,6 @@
-https://raw.githubusercontent.com/luozijun1998/IPTV/master/iptvlist.txt
-https://raw.githubusercontent.com/francistony/IPTV4/main/IPTV.m3u
-https://raw.githubusercontent.com/ssyan/IPTV/master/output/iptvlist.txt
+https://epg.pw/api/iptvlist?type=json
+https://api.github.com/meta
+https://tvapi.abcxyz.top/api/iptv
+
 https://raw.githubusercontent.com/yuanzl77/IPTV/main/live.txt
 
