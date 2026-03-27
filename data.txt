@@ -1,3 +1,5 @@
 http://61.159.134.160:4022/iptv/live/1000.json?key=txiptv
-http://106.43.102.92:8880/iptv/live/1000.json?key=txiptv
 http://61.159.134.75:4022/iptv/live/1000.json?key=txiptv
+http://106.43.102.92:8880/iptv/live/1000.json?key=txiptv
+http://183.230.163.100:8888/iptv/live/1000.json?key=txiptv
+http://223.112.131.34:8888/iptv/live/1000.json?key=txiptv
