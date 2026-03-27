@@ -1,5 +1,5 @@
-https://epg.pw/api/iptvlist?type=json
-https://m3u.epg.pw/api/iptv
-https://tv.youku123.com/api/iptv
-https://api.liuliangtv.com/iptv
-https://tv.baidu.com/api/iptvlist
+https://raw.githubusercontent.com/luozijun1998/IPTV/master/iptvlist.txt
+https://raw.githubusercontent.com/francistony/IPTV4/main/IPTV.m3u
+https://raw.githubusercontent.com/ssyan/IPTV/master/output/iptvlist.txt
+https://raw.githubusercontent.com/yuanzl77/IPTV/main/live.txt
+
