@@ -8,7 +8,12 @@ DATA_FILE = "data.txt"
 OUT_FILE = "live.txt"
 MAX_CONCURRENT = 100
 TIMEOUT = 8
-KEEP_PER_CHANNEL = 20
+KEEP_PER_CHANNEL = 1
+
+# 安卓4.4.2 UA
+HEADERS = {
+    "User-Agent": "Dalvik/1.6.0 (Linux; U; Android 4.4.2; Build/KVT49L)"
+}
 
 # ================= 频道列表 =================
 CCTV_ALL = [
@@ -78,7 +83,7 @@ def is_valid(u):
 async def check(ses, url, sem):
     async with sem:
         try:
-            async with ses.get(url, timeout=TIMEOUT) as r:
+            async with ses.get(url, timeout=TIMEOUT, headers=HEADERS) as r:
                 return url if r.status == 200 else None
         except:
             return None
@@ -86,11 +91,9 @@ async def check(ses, url, sem):
 async def grab(ses, url, sem):
     async with sem:
         try:
-            async with ses.get(url, timeout=TIMEOUT) as r:
+            async with ses.get(url, timeout=TIMEOUT, headers=HEADERS) as r:
                 text = await r.text()
                 res = []
-
-                # 兼容 txt 格式：名称,链接
                 for line in text.splitlines():
                     line = line.strip()
                     if not line or "," not in line:
@@ -100,7 +103,6 @@ async def grab(ses, url, sem):
                         continue
                     name = parts[0].strip()
                     urlx = parts[1].strip()
-
                     for k, vs in CHANNEL_MAP.items():
                         if name in vs or name == k:
                             name = k
@@ -110,6 +112,17 @@ async def grab(ses, url, sem):
         except:
             return []
 
+async def test_speed(ses, url, sem):
+    async with sem:
+        try:
+            start = asyncio.get_event_loop().time()
+            async with ses.head(url, timeout=3, headers=HEADERS) as r:
+                if r.status in (200, 302):
+                    return int((asyncio.get_event_loop().time() - start) * 1000)
+        except:
+            pass
+        return 99999
+
 # ================= 主函数 =================
 async def main():
     urls = load_data()
@@ -118,7 +131,7 @@ async def main():
         return
 
     sem = asyncio.Semaphore(MAX_CONCURRENT)
-    async with aiohttp.ClientSession() as ses:
+    async with aiohttp.ClientSession(headers=HEADERS) as ses:
         tasks = [check(ses, u, sem) for u in urls]
         ok = [x for x in await asyncio.gather(*tasks) if x]
         print(f"✅ 可用接口: {len(ok)}")
@@ -131,11 +144,25 @@ async def main():
         all_ch = [x for x in all_ch if is_valid(x[1])]
         print(f"📺 有效频道: {len(all_ch)}")
 
+        # 测速
+        print("🚀 开始测速...")
+        speed_tasks = [test_speed(ses, u, sem) for n, u in all_ch]
+        speeds = await asyncio.gather(*speed_tasks)
+        all_ch = [(n, u, s) for (n, u), s in zip(all_ch, speeds)]
+
+        # 去重：每个频道只保留最快一条
+        ch_map = {}
+        for n, u, s in sorted(all_ch, key=lambda x: x[2]):
+            if n not in ch_map:
+                ch_map[n] = (n, u, s)
+        all_ch = list(ch_map.values())
+
+    # 分类
     cate = {c: [] for c in CHANNEL_CATEGORIES}
-    for n, u in all_ch:
+    for n, u, s in all_ch:
         for c_name, c_list in CHANNEL_CATEGORIES.items():
             if n in c_list:
-                cate[c_name].append((n, u))
+                cate[c_name].append((n, u, s))
                 break
 
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
@@ -146,10 +173,10 @@ async def main():
             for ch in c_list:
                 items = [x for x in cate[c_name] if x[0] == ch]
                 for item in items[:KEEP_PER_CHANNEL]:
-                    f.write(f"{item[0]},{item[1]}\n")
+                    title = f"{item[0]}_HD264"
+                    f.write(f"{title},{item[1]}\n")
             f.write("\n")
     print("🎉 完成: live.txt")
 
 if __name__ == "__main__":
     asyncio.run(main())
-
