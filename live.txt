@@ -1,4 +1,4 @@
-# 更新: 2026-03-28 16:01
+# 更新: 2026-03-28 19:11
 
 央视频道,#genre#
 CCTV1_HD264,http://121.33.239.242:9901/tsfile/live/0001_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路40』
@@ -6,11 +6,11 @@ CCTV1_HD264,http://118.249.23.16:4022/udp/239.76.246.151:1234$LR•IPV4『线路
 CCTV1_HD264,http://118.249.23.16:4022/udp/239.76.253.151:9000$LR•IPV4『线路52』
 CCTV1_HD264,http://171.213.196.134:8088/udp/239.93.0.184:5140$LR•IPV4『线路53』
 CCTV1_HD264,http://171.213.196.134:8088/udp/239.93.0.148:5140$LR•IPV4『线路54』
-CCTV1_HD264,https://www.freetv.top/migu/608807420.m3u8?migutoken=5b04cf0d91179ab2d3d71703f0a8bc3d32dd02f7d8fb55ee70e05c216b8a9d1a73d911fbde798459fb66d94934157c996f8306c0dd37917775f2ed73dcc22cf84b25ca500bff5c636ff48d6344$LR•IPV4『线路181』
-CCTV4_HD264,https://www.freetv.top/migu/631780421.m3u8?migutoken=fefc6a44400a0dd448699ae0ce3d6e2c5a0f49b8d48adb36e747c4fbab039337eb3244f9951acbddaf26b7bf51597a7d1b43c8845e67fd5914ece875dcad325bb388200bc0f12fdff727d03e2d$LR•IPV4『线路176』
-CCTV4_HD264,https://www.freetv.top/migu/631780421.m3u8?migutoken=9c479e166888f001e1fb4ab5502e734251c68075cd89836a715137a1a2a4b18b60e282b0f1a308d6641c282600bd8db3cef99cb15edd0ab61d81c4d76d154bb464e3a02a75b167298c4747ce6f$LR•IPV4『线路324』
-CCTV12_HD264,https://www.freetv.top/migu/673168185.m3u8?migutoken=37acadb43b1d7932b0a1e8a4f2d01a06b42a10c31f3ccb417bae200ac3028f30a8110509f2cd6cd130aee4b21c85693aa49817f3381e4d28e140d8db1a20b6fecea22fec17a70ff1341efe6081$LR•IPV4『线路162』
-CCTV6_HD264,https://www.freetv.top/migu/624878396.m3u8?migutoken=38a08d31f79563a15b6c38307b16c1f1fd2715f58a1bff21d307adaa6597fb3ea267812ba6ac28a74fa0648f0a2003c0d93e137f0257353bff9dedc7eff0cc871a38e97a269bf9ab6e14a4171d$LR•IPV4『线路326』
+CCTV1_HD264,https://www.freetv.top/migu/608807420.m3u8?migutoken=ba552a2083efcc0e9cac8e15f58b13e090dab068fdb3997d064fd7e6e5f165824a5caaa619f3447f77d75712ad65bd76cb137741f46b0a28cb1afc020328b9b4ec1d3f8e8fed80beb6245b6544$LR•IPV4『线路282』
+CCTV11_HD264,https://www.freetv.top/migu/667987558.m3u8?migutoken=0960d7e074be53abeacd988e7daaca6d1477b1f255f98a01c33c7adf74ac246fe65a23451c3cff9b1203a6285cec778b6d488bd805e9d2433abe3ca23eb24e4f2a5f36bba821773558e1dec231$LR•IPV4『线路257』
+CCTV9_HD264,https://www.freetv.top/migu/673168140.m3u8?migutoken=0f1a623dca6f658303aaa4999b3ace15c780e46aa170dd3d91f0e82333ce6046e6bab6fa6948fba878c2b6e0cf9d1f04d09cc1ebaed71350ec282ef8595200813c491a3e23da08b3242755d891$LR•IPV4『线路316』
+CCTV4_HD264,http://www.freetv.top/migu/631780421.m3u8?migutoken=7acf39385ea80b0efa77b918418fcf998d00455e8b98e02dff92961440d989e3b7da00ef24731d327c410f2ef9ceb51e2137c20b2b606646542ce4643521747bf78b7533b3ec604bba63ffdf43$LR•IPV4『线路382』
+CCTV15_HD264,https://www.freetv.top/migu/673168223.m3u8?migutoken=b3f5f563a0e87a8d4215ce2f21de8c4ba355f6b7cecac5f686433bc2809f1a670c2454c39a4c60e3d446e610daf4c9bb26feea0ee07ed55a05d6b332b10381aa4ffb12bb3db425336f25a43987$LR•IPV4『线路261』
 
 全国卫视,#genre#
 湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.245.115:1234$LR•IPV4『线路60』
@@ -18,11 +18,11 @@ CCTV6_HD264,https://www.freetv.top/migu/624878396.m3u8?migutoken=38a08d31f79563a
 湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.253.101:9000$LR•IPV4『线路62』
 湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.253.100:9000$LR•IPV4『线路63』
 湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.252.115:9000$LR•IPV4『线路64』
-浙江卫视_HD264,https://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8?$LR•IPV4『线路89』
 内蒙古卫视_HD264,https://ali-m-l.cztv.com/channels/lantian/channel007/1080p.m3u8$LR•IPV4『线路27』
+浙江卫视_HD264,https://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8?$LR•IPV4『线路89』
 浙江卫视_HD264,https://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8$LR•IPV4『线路56』
-浙江卫视_HD264,http://ali-vl.cztv.com/channels/lantian/channel001/360p.m3u8$LR•IPV4『线路117』
-浙江卫视_HD264,http://ali-m-l.cztv.com:80/channels/lantian/channel001/1080p.m3u8$LR•IPV4『线路55』
+浙江卫视_HD264,http://ali-m-l.cztv.com/channels/lantian/channel01/1080p.m3u8$LR•IPV4『线路166』
+浙江卫视_HD264,http://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8$LR•IPV4『线路105』
 
 贵州地方,#genre#
 贵州卫视_HD264,http://121.33.239.242:9901/tsfile/live/0120_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路52』
