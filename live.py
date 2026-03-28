@@ -8,7 +8,7 @@ DATA_FILE = "data.txt"
 OUT_FILE = "live.txt"
 MAX_CONCURRENT = 100
 TIMEOUT = 8
-KEEP_PER_CHANNEL = 1
+KEEP_PER_CHANNEL = 5
 
 # 安卓4.4.2 UA
 HEADERS = {
