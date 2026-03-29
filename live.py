@@ -4,13 +4,11 @@ import datetime
 import re
 
 DATA_FILE = "data.txt"
-OUT_FILE = "live.txt"
+OUT_FILE_TXT = "live.txt"
+OUT_FILE_M3U = "live.m3u"
 
 MAX_CONCURRENT = 50
 TIMEOUT = 8
-
-KEEP_MULTICAST = 5   # ⭐ 组播保留 5 条
-KEEP_PUBLIC = 5      # ⭐ 公网保留 5 条
 
 HEADERS = {
     "User-Agent": "Dalvik/1.6.0 (Linux; U; Android 4.4.2; Build/KVT49L)"
@@ -45,9 +43,10 @@ CHANNEL_CATEGORIES = {
     "贵州地方": GUIZHOU_LOCAL
 }
 
+# 强力频道名纠正规则
 CHANNEL_MAP = {
-    "CCTV1": ["CCTV-1","CCTV1","CCTV1综合"],
-    "CCTV2": ["CCTV-2","CCTV2","CCTV2财经"],
+    "CCTV1": ["CCTV-1","CCTV1","CCTV1综合","CCTV1HD","CCTV-1综合频道"],
+    "CCTV2": ["CCTV-2","CCTV2","CCTV2财经","CCTV2HD"],
     "CCTV3": ["CCTV-3","CCTV3","CCTV3综艺"],
     "CCTV4": ["CCTV-4","CCTV4","CCTV4中文国际"],
     "CCTV5": ["CCTV-5","CCTV5","CCTV5体育"],
@@ -77,51 +76,29 @@ def load_data():
     except:
         return []
 
+def fix_url(url):
+    if not url:
+        return None
+    if url.startswith(("javascript:", "data:", "blob:", "about:", "null")):
+        return None
+    if url.startswith("http://") or url.startswith("https://") or url.startswith("rtmp://") or url.startswith("rtp://") or url.startswith("udp://"):
+        return url
+    if re.match(r"^\d+\.\d+\.\d+\.\d+", url):
+        return "http://" + url
+    return url
+
+def normalize_name(name):
+    for k, vs in CHANNEL_MAP.items():
+        for v in vs:
+            if v in name:
+                return k
+    return name.strip()
+
 def classify_channel(name):
     for cate, lst in CHANNEL_CATEGORIES.items():
         if name in lst:
             return cate
     return None
-
-def is_multicast(url):
-    return url.startswith("rtp://") or url.startswith("udp://") or "239." in url
-
-def is_public(url):
-    return url.startswith("http")
-
-# ===========================
-# 真实 HLS 分片测速
-# ===========================
-async def test_speed(session, url, sem):
-    async with sem:
-        try:
-            # 1. 获取 m3u8
-            async with session.get(url, timeout=TIMEOUT) as r:
-                if r.status != 200:
-                    return 999999
-                text = await r.text()
-
-            # 2. 找到第一个 ts 分片
-            ts_list = [l.strip() for l in text.splitlines() if l.strip().endswith(".ts")]
-            if not ts_list:
-                return 999999
-
-            ts_url = ts_list[0]
-            if not ts_url.startswith("http"):
-                base = url.rsplit("/",1)[0]
-                ts_url = base + "/" + ts_url
-
-            # 3. 下载 200KB 测速
-            start = asyncio.get_event_loop().time()
-            async with session.get(ts_url, timeout=TIMEOUT) as r:
-                await r.content.read(200*1024)
-            end = asyncio.get_event_loop().time()
-
-            speed = int(200 / (end - start))  # KB/s
-            return speed
-
-        except:
-            return 999999
 
 # ===========================
 # 主流程
@@ -129,17 +106,14 @@ async def test_speed(session, url, sem):
 async def main():
     urls = load_data()
     if not urls:
-        print("❌ data.txt 为空")
+        print("❌ data.txt 为空", flush=True)
         return
-
-    sem = asyncio.Semaphore(MAX_CONCURRENT)
 
     async with aiohttp.ClientSession(headers=HEADERS) as session:
 
-        # ======================
-        # 1. 抓取频道
-        # ======================
         all_channels = []
+
+        print("📡 开始抓取频道源...", flush=True)
 
         for api in urls:
             try:
@@ -151,72 +125,61 @@ async def main():
             for line in text.splitlines():
                 if "," not in line:
                     continue
-                name, link = line.split(",",1)
-                name = name.strip()
-                link = link.strip()
 
-                # 映射频道名
-                for k, vs in CHANNEL_MAP.items():
-                    if name in vs:
-                        name = k
-                        break
+                name, link = line.split(",",1)
+                name = normalize_name(name.strip())
+                link = fix_url(link.strip())
+
+                if not link:
+                    continue
 
                 all_channels.append((name, link))
 
-        print(f"📺 抓到频道源：{len(all_channels)}")
+        print(f"📺 抓到频道源：{len(all_channels)}", flush=True)
 
-        # ======================
-        # 2. 真实测速
-        # ======================
-        print("🚀 开始真实 HLS 分片测速...")
+        # 去重（同名频道保留不同 URL）
+        unique = {}
+        for name, url in all_channels:
+            unique.setdefault(name, set()).add(url)
 
-        tasks = [test_speed(session, u, sem) for _, u in all_channels]
-        speeds = await asyncio.gather(*tasks)
-
-        all_channels = [(n, u, s) for (n, u), s in zip(all_channels, speeds)]
-
-        # ======================
-        # 3. 分类 + 组播/公网分开排序
-        # ======================
+        # 分类
         result = {c: [] for c in CHANNEL_CATEGORIES}
 
-        for name, url, speed in all_channels:
+        for name, urls in unique.items():
             cate = classify_channel(name)
             if not cate:
                 continue
-            result[cate].append((name, url, speed))
+            for u in urls:
+                result[cate].append((name, u))
 
-        # ======================
-        # 4. 输出
-        # ======================
+        # 排序 + 每类保留 5 条
+        for cate in result:
+            result[cate] = sorted(result[cate], key=lambda x: x[0])[:5]
+
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
-        with open(OUT_FILE,"w",encoding="utf-8") as f:
+        # ===========================
+        # 输出 TXT
+        # ===========================
+        with open(OUT_FILE_TXT,"w",encoding="utf-8") as f:
             f.write(f"# 更新: {now}\n\n")
-
             for cate, ch_list in result.items():
                 f.write(f"{cate},#genre#\n")
-
-                # 组播
-                multicast = sorted(
-                    [x for x in ch_list if is_multicast(x[1])],
-                    key=lambda x: x[2]
-                )[:KEEP_MULTICAST]
-
-                # 公网
-                public = sorted(
-                    [x for x in ch_list if is_public(x[1])],
-                    key=lambda x: x[2]
-                )[:KEEP_PUBLIC]
-
-                final = multicast + public
-
-                for name, url, speed in final:
-                    f.write(f"{name}_HD264,{url}\n")
-
+                for name, url in ch_list:
+                    f.write(f"{name},{url}\n")
                 f.write("\n")
 
-        print("🎉 完成：live.txt 已生成（组播5 + 公网5）")
+        # ===========================
+        # 输出 M3U（TVBox 标准格式 A）
+        # ===========================
+        with open(OUT_FILE_M3U,"w",encoding="utf-8") as f:
+            f.write("#EXTM3U\n")
+            for cate, ch_list in result.items():
+                for name, url in ch_list:
+                    f.write(f'#EXTINF:-1 tvg-name="{name}" group-title="{cate}",{name}\n')
+                    f.write(f"{url}\n")
+
+        print("🎉 完成：live.txt + live.m3u 已生成（每类保留 5 条）", flush=True)
 
 if __name__ == "__main__":
     asyncio.run(main())
