@@ -1,38 +1,23 @@
-# 更新: 2026-03-29 07:33
+# 更新: 2026-03-29 08:41
 
 央视频道,#genre#
-CCTV1_HD264,http://121.33.239.242:9901/tsfile/live/0001_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路40』
-CCTV1_HD264,http://118.249.23.16:4022/udp/239.76.246.151:1234$LR•IPV4『线路51』
-CCTV1_HD264,http://118.249.23.16:4022/udp/239.76.253.151:9000$LR•IPV4『线路52』
-CCTV1_HD264,http://171.213.196.134:8088/udp/239.93.0.184:5140$LR•IPV4『线路53』
-CCTV1_HD264,http://171.213.196.134:8088/udp/239.93.0.148:5140$LR•IPV4『线路54』
-CCTV3_HD264,https://www.freetv.top/migu/624878271.m3u8?migutoken=ca824f02f6213b64bc94ece82f051a14d6b4b3a0a87493655d302b6c76e29668b57118071931e320faddacacabcb320684e805e3e5b3fdd4465a65f9bc6eac1ff4f24f1c0cde6a2a5cd9a8553a$LR•IPV4『线路339』
-CCTV5+_HD264,https://www.freetv.top/migu/641886773.m3u8?migutoken=03a1b82e35e58cd89a95034ecb29e77e50493397000ec2b1e4d1ce59af01e6420d6dbc068c8230ec03be3a35a20eed8714e0959e3570a08713a7a2e8d86085eabf8f1aa85744c80c38343988b2$LR•IPV4『线路85』
-CCTV2_HD264,https://www.freetv.top/migu/631780532.m3u8?migutoken=8a73f9dbcc6da55c0bb099a7d335fcdb754c606cf8a5e21cb3b84173052074a311761bfb95b1cf7185e4db2b24a0b5d21a4807e6b6bf8c462395f81b3895c1026a645db32431ff0cf541e1991f$LR•IPV4『线路313』
-CCTV2_HD264,https://www.freetv.top/migu/631780532.m3u8?migutoken=317722ab220ea7aa14f0f18816b423a2ce5181a72d8b1f02e4aba95d7d7707dc123fcbb113b41a2406a823e2a738dbdbfb23c22ccfe936e40e63d389ab3f0f2e4ae3f3ec3e46f3d2f021b3c7b5$LR•IPV4『线路304』
-CCTV9_HD264,https://www.freetv.top/migu/673168140.m3u8?migutoken=a22c8c1a84a2c3f115ccea3f065ca5c445f91c5a490bbcf95da122d1901c7d7680bf8ec25837bd7f8f36b45bbb9e635f72eee01b6b5605fb31077b5adfbc8604e6111e294f2b08707a1ad595d7$LR•IPV4『线路321』
+CCTV1,http://8.138.7.223/tv/mgitv.php?id=76$LR•IPV4『线路173』
+CCTV1,http://61.156.228.12:8154/tsfile/live/0001_1.m3u8$LR•IPV4『线路258』
+CCTV1,http://125.82.168.238:8888/rtp/235.254.198.59:1512$LR•IPV4『线路250』
+CCTV1,http://101.66.198.84:9901/tsfile/live/0014_1.m3u8?key=txiptv&playlive=0&authid=0$LR•IPV4『线路170』
+CCTV1,http://121.19.134.222:808/tsfile/live/0011_1.m3u8$LR•IPV4『线路233』
 
 全国卫视,#genre#
-湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.245.115:1234$LR•IPV4『线路60』
-湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.246.101:1234$LR•IPV4『线路61』
-湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.253.101:9000$LR•IPV4『线路62』
-湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.253.100:9000$LR•IPV4『线路63』
-湖南卫视_HD264,http://118.249.23.16:4022/udp/239.76.252.115:9000$LR•IPV4『线路64』
-浙江卫视_HD264,http://ali-vl.cztv.com/channels/lantian/channel001/360p.m3u8$LR•IPV4『线路117』
-内蒙古卫视_HD264,https://ali-m-l.cztv.com/channels/lantian/channel007/1080p.m3u8$LR•IPV4『线路27』
-浙江卫视_HD264,https://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8?$LR•IPV4『线路89』
-浙江卫视_HD264,https://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8$LR•IPV4『线路56』
-浙江卫视_HD264,http://ali-m-l.cztv.com/channels/lantian/channel01/1080p.m3u8$LR•IPV4『线路166』
+东南卫视,http://[2409:8087:3869:8021:1001::e5]:6610/PLTV/88888888/224/3221225657/2/index.m3u8$LR•IPV6『线路1』
+东南卫视,http://60.209.125.254:352/tsfile/live/0137_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路105』
+东南卫视,http://58.220.219.14:9901/tsfile/live/0137_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路153』
+东南卫视,http://42.48.50.232:9002/tsfile/live/0137_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路61』
+东南卫视,http://60.7.56.33:4000/udp/239.253.92.201:6146$LR•IPV4『线路157』
 
 贵州地方,#genre#
-贵州卫视_HD264,http://121.33.239.242:9901/tsfile/live/0120_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路52』
-贵州卫视_HD264,http://118.249.23.16:4022/udp/239.76.245.198:1234$LR•IPV4『线路61』
-贵州卫视_HD264,http://118.249.23.16:4022/udp/239.76.252.198:9000$LR•IPV4『线路62』
-贵州卫视_HD264,http://171.213.196.134:8088/udp/239.93.0.131:5140$LR•IPV4『线路63』
-贵州卫视_HD264,http://171.213.196.134:8088/udp/239.93.1.200:5140$LR•IPV4『线路64』
-贵州卫视_HD264,http://[2409:8087:3869:8021:1001::e5]:6610/PLTV/88888888/224/3221225728/2/index.m3u8$LR•IPV6『线路1』
-贵州卫视_HD264,http://[2409:8087:1a01:df::4030]:80/TVOD/88888888/224/3221225974/main.m3u8$LR•IPV6『线路2』
-贵州卫视_HD264,http://[2409:8087:1a01:df::4077]:80/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226474/index.m3u8$LR•IPV6『线路3』
-贵州卫视_HD264,http://[2409:8087:1a01:df::4077]:80/ottrrs.hl.chinamobile.com/yinhe/88888888/224/3221226474/index.m3u8$LR•IPV6『线路4』
-贵州卫视_HD264,http://[2409:8087:1a01:df::4077]:80/ottrrs.hl.chinamobile.com/PLTV/88888888/8/3221226474/index.m3u8$LR•IPV6『线路5』
+贵州卫视,http://123.138.22.30:9901/tsfile/live/0120_1.m3u8$LR•IPV4『线路195』
+贵州卫视,http://118.122.189.74:9901/tsfile/live/0120_1.m3u8$LR•IPV4『线路149』
+贵州卫视,http://116.117.105.96:8096/tsfile/live/0120_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路193』
+贵州卫视,http://220.164.192.48:50085/tsfile/live/0125_1.m3u8$LR•IPV4『线路43』
+贵州卫视,http://psp94525.iask.in:6688/udp/239.93.0.131:5140$LR•IPV4『线路144』
 
