@@ -1,23 +1,23 @@
-# 更新: 2026-03-29 13:12
+# 更新: 2026-03-29 18:55
 
 央视频道,#genre#
-CCTV1,http://220.170.241.204:9901/tsfile/live/0011_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路220』
-CCTV1,http://wouu.net:9977/udp/239.93.1.28:5140$LR•IPV4『线路185』
-CCTV1,http://58.19.43.46:9901/tsfile/live/1029_1.m3u8$LR•IPV4『线路202』
-CCTV1,http://[2409:8087:4c0a:22:1::11]:6410/170000001115/UmaiCHAN5000040BESTVSMGSMG/index.m3u8?AuthInfo=9kOOdBn7MFF%2F2bWjKgahUd3JM2PCgDefrKOVZLNt0QMAmpLefguRLiOPXiDRWhxHg8yim2giTBA8RILsb%2B8Y5pkFUyZBE%2FkNJAbwncEegkU$LR•IPV6『线路6』
-CCTV1,http://[2409:8087:3869:8021:1001::e5]:6610/PLTV/88888888/224/3221225907/2/index.m3u8$LR•IPV6『线路2』
+CCTV1,http://121.227.243.195:7766/rtp/239.49.1.11:6000$LR•IPV4『线路49』
+CCTV1,http://127.0.0.1:9978/proxy?do=ysptp&type=m3u8&id=cctv14$LR•IPV4『线路132』
+CCTV1,http://127.0.0.1:9978/proxy?do=ysptp&type=m3u8&id=cctv17$LR•IPV4『线路90』
+CCTV1,http://iptv.0564.org:35455/itv/1000000005000265015.m3u8?cdn=ystenlive$LR•IPV4『线路98』
+CCTV1,http://60.172.130.146:352/tsfile/live/0010_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路144』
 
 全国卫视,#genre#
-东南卫视,http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225620/index.m3u8$LR•IPV4『线路217』
-东南卫视,http://113.218.229.47:8081/tsfile/live/0137_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路102』
-东南卫视,http://125.82.168.238:8888/rtp/235.254.198.35:1416$LR•IPV4『线路172』
-东南卫视,http://[2409:8087:4c0a:22:1::11]:6410/170000001115/UmaiCHAN3540417BESTVSMGSMG/index.m3u8?AuthInfo=9kOOdBn7MFF%2F2bWjKgahUXv1bCET6%2FGP6LFvnNC2DgH0ZQXwaiVktPr6ILPKXqwO%2B40ghr%2F2EQqAw4TSfOQgwgjPkFLBGBm%2FRxwhWL4Q3uM$LR•IPV6『线路39』
-东南卫视,http://gf.you123.fun:35455/itv/1000000005000265033.m3u8?cdn=ystenlive$LR•IPV4『线路244』
+东南卫视,http://110.7.131.146:9901/tsfile/live/0137_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路127』
+东南卫视,http://lu.wqwqwq.sbs/itv/1000000005000265033.m3u8?cdn=ystenlive$LR•IPV4『线路141』
+东南卫视,http://110.7.131.40:9901/tsfile/live/0137_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路128』
+东南卫视,https://stream1.freetv.fun/e107cbdb3db41f72a62c05f652a6cebd52ca23bdc40477d2effd2fabf63d0b8a.m3u8$LR•IPV4『线路234』
+东南卫视,http://113.57.111.4:1111/tsfile/live/1027_1.m3u8$LR•IPV4『线路117』
 
 贵州地方,#genre#
-贵州卫视,http://[2409:8087:1a01:df::7005]:80/ottrrs.hl.chinamobile.com/TVOD/88888888/224/3221226474/index.m3u8$LR•IPV6『线路25』
-贵州卫视,http://121.33.239.242:9901/tsfile/live/0120_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路52』
-贵州卫视,http://222.241.154.37:9901/tsfile/live/23046_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路201』
-贵州卫视,http://115.60.241.249:2000/rtp/225.1.4.122:1302$LR•IPV4『线路160』
-贵州卫视,http://113.57.111.4:1111/tsfile/live/1029_1.m3u8$LR•IPV4『线路116』
+贵州卫视,http://116.117.106.117:8096/tsfile/live/0120_1.m3u8?key=txiptv&playlive=1&authid=0$LR•IPV4『线路80』
+贵州卫视,http://101.66.198.247:9901/tsfile/live/0120_1.m3u8?key=txiptv&playlive=0&authid=0$LR•IPV4『线路51』
+贵州卫视,http://60.7.56.33:4000/rtp/239.253.92.105:6055$LR•IPV4『线路196』
+贵州卫视,http://123.129.70.178:9901/tsfile/live/0120_1.m3u8$LR•IPV4『线路163』
+贵州卫视,http://kkk.jjjj.jiduo.me/api.php?n=tttt&id=1716&tk=23a9aca1f79f$LR•IPV4『线路89』
 
