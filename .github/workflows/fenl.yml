@@ -1,0 +1,34 @@
+name: 分类频道
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-fenl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run fenl.py (生成 fenl.txt)
+        run: python3 fenl.py
+
+      - name: Commit and Push fenl.txt
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add fenl.txt
+          git commit -m "Auto update fenl.txt" || echo "No changes"
+          git push
+
+      - name: Upload fenl.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fenl-output
+          path: fenl.txt
