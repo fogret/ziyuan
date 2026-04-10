@@ -53,12 +53,23 @@ def build_yings_txt():
     out_file = os.path.join(root, "yings.txt")
     with open(out_file, 'w', encoding='utf-8') as f:
         for cat, names in categories.items():
-            f.write(f"{cat}\n")
-            for n in names:
-                f.write(f"  {n}\n")
+            f.write(f"{cat}：\n")
+
+            line = "  "
+            for name in names:
+                item = f"{name}, "
+                if len(line) + len(item) > 40:   # 每行最多 40 字符，可调
+                    f.write(line.rstrip() + "\n")
+                    line = "  " + item
+                else:
+                    line += item
+
+            if line.strip():
+                f.write(line.rstrip() + "\n")
+
             f.write("\n")
 
-    log("yings.txt 写入完成")
+    log("yings.txt 写入完成（横向 + 自动换行）")
 
 if __name__ == "__main__":
     build_yings_txt()
