@@ -24,7 +24,7 @@ jobs:
         run: pip install requests
 
       - name: Run extractor
-        run: python3 rings.py
+        run: python3 yings.py
 
       - name: Commit and Push yings.txt
         run: |
