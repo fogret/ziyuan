@@ -1,36 +1,58 @@
-name: Auto Update IPTV
+name: 提取频道名到 yings.txt
 
 on:
-  schedule:
-    - cron: "0 */6 * * *"
-  workflow_dispatch:
+  workflow_dispatch:   # 手动运行
+  push:
+    branches: [ Jsnzkpg ]
 
 jobs:
-  build:
+  extract:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-      with:
-        # 保留默认 credentials，不需要 persist-credentials: false
-        fetch-depth: 0
+      - name: 拉取代码
+        uses: actions/checkout@v4
+        with:
+          ref: Jsnzkpg
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install dependencies
-      run: pip install aiohttp
+      - name: 安装依赖
+        run: pip install requests
 
-    - name: Run main.py
-      run: python main.py
+      - name: 拉取 M3U 并提取频道名
+        run: |
+          cat > extract.py << 'EOF'
+          import requests
 
-    - name: Commit & Push
-      run: |
-        git config --local user.name "github-actions[bot]"
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git add live.txt
-        git commit -m "Auto update live.txt" || echo "No changes"
-        git push
+          m3u_url = "https://raw.githubusercontent.com/Jsnzkpg/Jsnzkpg/Jsnzkpg/Jsnzkpg1.m3u"
+          r = requests.get(m3u_url)
+          lines = r.text.splitlines()
+
+          channels = []
+          for line in lines:
+              line = line.strip()
+              if line.startswith("#EXTINF"):
+                  parts = line.split(",", 1)
+                  if len(parts) == 2:
+                      name = parts[1].strip()
+                      channels.append(name)
+
+          # 去重
+          unique = list(dict.fromkeys(channels))
+
+          with open("yings.txt", "w", encoding="utf-8") as f:
+              f.write("\n".join(unique))
+          EOF
+
+          python extract.py
+
+      - name: 提交并推送
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add yings.txt
+          git commit -m "更新频道列表 yings.txt" || exit 0
+          git push
