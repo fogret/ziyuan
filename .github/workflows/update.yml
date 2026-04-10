@@ -3,7 +3,7 @@ name: 提取分类生成yings
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 21 * * *"  # 北京时间早上5点运行
+    - cron: "0 21 * * *"
 
 jobs:
   run-yings:
@@ -22,6 +22,14 @@ jobs:
 
       - name: Run extractor
         run: python3 main.py
+
+      - name: Commit and Push yings.txt
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add yings.txt
+          git commit -m "Update yings.txt" || echo "No changes to commit"
+          git push
 
       - name: Upload yings.txt
         uses: actions/upload-artifact@v4
