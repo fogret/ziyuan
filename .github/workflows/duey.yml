@@ -1,0 +1,44 @@
+name: 自动提取与分类
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 21 * * *"   # 每天 21:00 UTC（北京时间 05:00）
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run yings.py (生成 yings.txt)
+        run: python3 yings.py
+
+      - name: Run duey.py (生成 duey.txt)
+        run: python3 duey.py
+
+      - name: Commit and Push results
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add yings.txt duey.txt
+          git commit -m "Auto update yings.txt & duey.txt" || echo "No changes"
+          git push
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: yings-duey-output
+          path: |
+            yings.txt
+            duey.txt
