@@ -1,68 +1,126 @@
 import re
-from sentence_transformers import SentenceTransformer, util
 
-# 你的 15 类
-CATEGORIES = [
-    "央视频道","付费频道","卫视频道","地方频道","影剧频道",
-    "数字频道","音乐频道","综娱频道","记录频道","港澳频道",
-    "国际频道","少儿频道","动漫频道","直播频道","游戏频道"
-]
+INPUT_FILE = "yings.txt"
+OUTPUT_FILE = "duey.txt"
 
-# 加载中文语义模型（一次下载，之后永久使用）
-model = SentenceTransformer("shibing624/text2vec-base-chinese")
+# 去除 emoji / 图标（不是目的，是为了不影响统一）
+def remove_icons(name):
+    emoji_pattern = re.compile(
+        "[" 
+        "\U0001F600-\U0001F64F"
+        "\U0001F300-\U0001F5FF"
+        "\U0001F680-\U0001F6FF"
+        "\U0001F1E0-\U0001F1FF"
+        "\U00002700-\U000027BF"
+        "\U0001F900-\U0001F9FF"
+        "\U0001FA70-\U0001FAFF"
+        "]+",
+        flags=re.UNICODE
+    )
+    return emoji_pattern.sub("", name).strip()
 
-# 编码 15 类
-cat_emb = model.encode(CATEGORIES, convert_to_tensor=True)
+# 去掉无意义词
+def remove_noise(name):
+    noise = [
+        "高清","HD","hd","4K","4k","超清","综合","频道","台",
+        "直播","专区","专场","系列","轮播","超高清"
+    ]
+    for n in noise:
+        name = name.replace(n, "")
+    return name.strip()
 
-def normalize(name):
-    n = name.strip()
-    up = n.upper()
-
-    if "CCTV5+" in up or "CCTV-5+" in up:
-        return "CCTV-5+"
-
+# 标准化 CCTV
+def normalize_cctv(name):
+    up = name.upper()
     m = re.search(r"CCTV[-_ ]?0?(\d+)", up)
     if m:
         return f"CCTV-{m.group(1)}"
+    if "CCTV" in up and "5+" in up:
+        return "CCTV-5+"
+    return None
 
+# 标准化 卫视
+def normalize_weishi(name):
+    if "卫视" in name:
+        return name[:name.index("卫视")+2]
+    return None
+
+# 标准化 数字频道
+def normalize_digital(name):
+    for k in ["咪视界","咪视通","BestTV","NewTV","SCTV","黑莓"]:
+        if k in name:
+            return k
+    return None
+
+# 标准化 港澳台
+def normalize_hk(name):
+    for k in ["TVB","凤凰","翡翠","明珠","澳视","台视","中视","华视","民视","ViuTV"]:
+        if k in name:
+            return k
+    return None
+
+# 标准化 国际台
+def normalize_international(name):
+    for k in ["CNN","BBC","NHK","TRT","DW","FOX","Global","News","Al Jazeera"]:
+        if k.lower() in name.lower():
+            return k.upper()
+    return None
+
+# 主标准化函数
+def normalize(name):
+    n = remove_icons(name)
+    n = remove_noise(n)
+
+    # CCTV
+    cctv = normalize_cctv(n)
+    if cctv:
+        return cctv
+
+    # 卫视
+    ws = normalize_weishi(n)
+    if ws:
+        return ws
+
+    # 港澳台
+    hk = normalize_hk(n)
+    if hk:
+        return hk
+
+    # 国际
+    intl = normalize_international(n)
+    if intl:
+        return intl
+
+    # 数字频道
+    digi = normalize_digital(n)
+    if digi:
+        return digi
+
+    # 默认：返回清洗后的原名
     return n
 
-def load_yings(path="yings.txt"):
+# 读取 yings.txt
+def load_yings():
     out = []
-    with open(path, "r", encoding="utf-8") as f:
+    with open(INPUT_FILE, "r", encoding="utf-8") as f:
         for raw in f:
             parts = [p.strip() for p in re.split(r"[,\s]+", raw) if p.strip()]
             out.extend(parts)
     return out
 
-def classify(name):
-    emb = model.encode(name, convert_to_tensor=True)
-    sim = util.cos_sim(emb, cat_emb)[0]
-    idx = sim.argmax().item()
-    return CATEGORIES[idx]
-
-def write_output(result, path="duey.txt"):
-    with open(path, "w", encoding="utf-8") as f:
-        for cat in CATEGORIES:
-            f.write(f"{cat}：\n")
-            line = "  "
-            for name in sorted(set(result.get(cat, []))):
-                item = f"{name}, "
-                if len(line) + len(item) > 40:
-                    f.write(line + "\n")
-                    line = "  " + item
-                else:
-                    line += item
-            f.write(line + "\n\n")
+# 输出映射表
+def write_output(mapping):
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        for original, standard in mapping:
+            f.write(f"{original} => {standard}\n")
 
 if __name__ == "__main__":
     yings = load_yings()
-    result = {c: [] for c in CATEGORIES}
+    mapping = []
 
     for name in yings:
-        clean = normalize(name)
-        cat = classify(clean)
-        result[cat].append(clean)
+        std = normalize(name)
+        mapping.append((name, std))
 
-    write_output(result)
-    print("按 15 类自动分类完成 → duey.txt")
+    write_output(mapping)
+    print("频道名标准化映射表已生成 → duey.txt")
