@@ -24,8 +24,8 @@ jobs:
     - name: Install dependencies
       run: pip install aiohttp
 
-    - name: Run live.py
-      run: python live.py
+    - name: Run main.py
+      run: python main.py
 
     - name: Commit & Push
       run: |
