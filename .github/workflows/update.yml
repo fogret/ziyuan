@@ -21,7 +21,7 @@ jobs:
           python-version: "3.11"
 
       - name: Run extractor
-        run: python3 mian.py
+        run: python3 main.py
 
       - name: Upload yings.txt
         uses: actions/upload-artifact@v4
