@@ -1,4 +1,4 @@
-name: 提取分类
+name: 分类生成 duey.text
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     - cron: "0 21 * * *"   # 每天 21:00 UTC（北京时间 05:00）
 
 jobs:
-  build:
+  run-duey:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,27 +18,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: pip install requests
-
-      - name: Run yings.py (生成 yings.txt)
-        run: python3 yings.py
-
-      - name: Run duey.py (生成 duey.txt)
+      - name: Run duey.py (分类生成 duey.txt)
         run: python3 duey.py
 
-      - name: Commit and Push results
+      - name: Commit and Push duey.txt
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          git add yings.txt duey.txt
-          git commit -m "Auto update yings.txt & duey.txt" || echo "No changes"
+          git add duey.txt
+          git commit -m "Auto update duey.txt" || echo "No changes"
           git push
 
-      - name: Upload artifacts
+      - name: Upload duey.txt artifact
         uses: actions/upload-artifact@v4
         with:
-          name: yings-duey-output
-          path: |
-            yings.txt
-            duey.txt
+          name: duey-output
+          path: duey.txt
