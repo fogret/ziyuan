@@ -1,4 +1,4 @@
-name: 提取分类生成
+name: 提取频道
 
 on:
   workflow_dispatch:
