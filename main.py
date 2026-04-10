@@ -1,41 +1,64 @@
-name: 提取分类生成yings
+import os
+import re
+import requests
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 21 * * *"
+def log(msg):
+    print(msg, flush=True)
 
-jobs:
-  run-yings:
-    runs-on: ubuntu-latest
+extinf_re = re.compile(
+    r'#EXTINF:[^\n]*group-title="(?P<group>[^"]*)"[^\n]*,(?P<name>.+)$'
+)
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          path: .
+def download_m3u(url):
+    log(f"下载直播源内容: {url}")
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.text
+    except Exception as e:
+        log(f"下载失败: {e}")
+        return ""
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+def extract_channels(m3u_text):
+    categories = {}
 
-      - name: Install dependencies
-        run: pip install requests
+    for line in m3u_text.splitlines():
+        line = line.strip()
+        if not line.startswith("#EXTINF"):
+            continue
 
-      - name: Run extractor
-        run: python3 main.py
+        m = extinf_re.match(line)
+        if not m:
+            continue
 
-      - name: Commit and Push yings.txt
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add yings.txt
-          git commit -m "Update yings.txt" || echo "No changes to commit"
-          git push
+        group = m.group("group").strip() or "未分类"
+        name = m.group("name").strip() or "未命名"
 
-      - name: Upload yings.txt
-        uses: actions/upload-artifact@v4
-        with:
-          name: yings
-          path: yings.txt
+        if group not in categories:
+            categories[group] = []
+        categories[group].append(name)
+
+    return categories
+
+def build_yings_txt():
+    root = os.getcwd()
+    data_file = os.path.join(root, "data.txt")
+
+    with open(data_file, 'r', encoding='utf-8') as f:
+        url = f.read().strip()
+
+    m3u_text = download_m3u(url)
+    categories = extract_channels(m3u_text)
+
+    out_file = os.path.join(root, "yings.txt")
+    with open(out_file, 'w', encoding='utf-8') as f:
+        for cat, names in categories.items():
+            f.write(f"{cat}\n")
+            for n in names:
+                f.write(f"  {n}\n")
+            f.write("\n")
+
+    log("yings.txt 写入完成")
+
+if __name__ == "__main__":
+    build_yings_txt()
