@@ -1,162 +1,113 @@
 import re
-from sentence_transformers import SentenceTransformer, util
+from collections import defaultdict, OrderedDict
 
-# 你的 15 类
-CATEGORIES = [
+# 输入文件：就是你发的这种带「央视频道：」「付费频道：」的大文件
+INPUT_FILE = "_cctv-1_cctv_1775827272916.txt"
+OUTPUT_FILE = "duey.txt"
+
+# 允许的分类名（顺序可改）
+CATEGORY_ORDER = [
     "央视频道","付费频道","卫视频道","地方频道","影剧频道",
     "数字频道","音乐频道","综娱频道","记录频道","港澳频道",
     "国际频道","少儿频道","动漫频道","直播频道","游戏频道"
 ]
 
-# ============================
-# 第一层：增强规则（只覆盖模型容易误判的 5%）
-# ============================
-def enhanced_rules(name):
-    up = name.upper()
-
-    # CCTV
-    if up.startswith("CCTV") or "中央" in name:
-        return "央视频道"
-
-    # 卫视
-    if "卫视" in name:
-        return "卫视频道"
-
-    # 港澳台
-    if any(x in name for x in ["TVB","凤凰","澳门","香港","台视","中视","民视","华视","ViuTV"]):
-        return "港澳频道"
-
-    # 少儿
-    if any(x in name for x in ["卡通","少儿","宝宝","亲子","育乐","嘉佳"]):
-        return "少儿频道"
-
-    # 动漫
-    if any(x in name for x in ["动漫","动画","柯南","火影","海贼","龙珠","哆啦","小丸子"]):
-        return "动漫频道"
-
-    # 游戏
-    if any(x in name for x in ["LOL","DOTA","CF","王者","游戏","电竞"]):
-        return "游戏频道"
-
-    return None
-
-
-# ============================
-# 第二层：模式识别（自动识别内容类型）
-# ============================
-def pattern_rules(name):
-
-    # 专场 → 直播
-    if "专场" in name:
-        return "直播频道"
-
-    # 系列 → 影剧
-    if "系列" in name:
-        return "影剧频道"
-
-    # 精选 / 点播 → 音乐
-    if "精选" in name or "点播" in name:
-        return "音乐频道"
-
-    # 纪录 / 纪实
-    if "纪录" in name or "纪实" in name:
-        return "记录频道"
-
-    # 电影 / 影院
-    if "电影" in name or "影院" in name:
-        return "影剧频道"
-
-    # 体育
-    if "体育" in name:
-        return "直播频道"
-
-    # 新闻
-    if "新闻" in name:
-        return "地方频道"
-
-    return None
-
-
-# ============================
-# 标准化
-# ============================
-def normalize(name):
+def normalize_name(name: str) -> str:
     n = name.strip()
-    up = n.upper()
-
-    if "CCTV5+" in up or "CCTV-5+" in up:
-        return "CCTV-5+"
-
-    m = re.search(r"CCTV[-_ ]?0?(\d+)", up)
-    if m:
-        return f"CCTV-{m.group(1)}"
-
-    n = re.sub(r"(高清|HD|4K|超清|频道|台)$", "", n).strip()
+    if not n:
+        return ""
+    # 去掉结尾常见修饰
+    n = re.sub(r"[，,。.\s]+$", "", n)
     return n
 
+def parse_file(path: str):
+    """
+    遍历整个文件：
+    - 遇到「xxx频道：」就切换当前分类
+    - 其它行按逗号拆分频道名，归到当前分类
+    """
+    name_to_cats = defaultdict(set)
+    current_cat = None
 
-# ============================
-# 提取频道
-# ============================
-def extract_channels():
-    out = []
-    with open("yings.txt","r",encoding="utf-8") as f:
+    cat_pattern = re.compile(r"^\s*(.+?)频道：\s*$")
+
+    with open(path, "r", encoding="utf-8") as f:
         for line in f:
-            parts = line.split(",") if "," in line else [line]
+            line = line.rstrip("\n")
+
+            # 1. 判断是不是「xxx频道：」
+            m = cat_pattern.match(line)
+            if m:
+                title = m.group(1).strip()
+                # 只接受在我们预设里的分类
+                if title in CATEGORY_ORDER:
+                    current_cat = title
+                else:
+                    # 其它类似「港澳频道」「国际频道」也可以自动接入
+                    current_cat = title
+                    if title not in CATEGORY_ORDER:
+                        CATEGORY_ORDER.append(title)
+                continue
+
+            # 2. 普通行：在当前分类下拆频道名
+            if current_cat is None:
+                continue
+
+            # 去掉前导缩进
+            line = line.strip()
+            if not line:
+                continue
+
+            # 有些行是「xxx频道：」的延续，这里再防一手
+            if line.endswith("频道："):
+                continue
+
+            parts = [p for p in line.split(",") if p.strip()]
             for p in parts:
-                p = p.strip()
-                if p and not p.endswith("："):
-                    out.append(p)
-    return out
+                name = normalize_name(p)
+                if not name:
+                    continue
+                # 排除类似「更新时间2026.4.10」这种
+                if "更新时间" in name:
+                    continue
+                name_to_cats[name].add(current_cat)
 
+    return name_to_cats
 
-# ============================
-# 主流程（终极版）
-# ============================
-if __name__ == "__main__":
-    raw = extract_channels()
-    clean = [normalize(x) for x in raw]
+def invert_mapping(name_to_cats):
+    """
+    把「频道名 → 多个分类」反转成
+    「分类 → 频道名列表」
+    """
+    cat_to_names = defaultdict(list)
+    for name, cats in name_to_cats.items():
+        for c in cats:
+            cat_to_names[c].append(name)
+    # 去重 + 排序
+    for c in cat_to_names:
+        cat_to_names[c] = sorted(set(cat_to_names[c]))
+    return cat_to_names
 
-    # 加载最强中文语义模型
-    model = SentenceTransformer("shibing624/text2vec-base-chinese")
-
-    # 编码分类
-    cat_emb = model.encode(CATEGORIES, convert_to_tensor=True)
-
-    result = {c: [] for c in CATEGORIES}
-
-    for name in clean:
-
-        # 第一层：增强规则
-        cat = enhanced_rules(name)
-        if cat:
-            result[cat].append(name)
-            continue
-
-        # 第二层：模式识别
-        cat = pattern_rules(name)
-        if cat:
-            result[cat].append(name)
-            continue
-
-        # 第三层：语义分类（核心）
-        emb = model.encode(name, convert_to_tensor=True)
-        sim = util.cos_sim(emb, cat_emb)[0]
-        idx = sim.argmax().item()
-        result[CATEGORIES[idx]].append(name)
-
-    # 输出
-    with open("duey.txt","w",encoding="utf-8") as f:
-        for cat, items in result.items():
+def write_output(cat_to_names, path: str):
+    with open(path, "w", encoding="utf-8") as f:
+        # 按预设顺序输出
+        for cat in CATEGORY_ORDER:
+            if cat not in cat_to_names:
+                continue
             f.write(f"{cat}：\n")
             line = "  "
-            for name in items:
+            for name in cat_to_names[cat]:
                 item = f"{name}, "
-                if len(line)+len(item)>40:
-                    f.write(line+"\n")
-                    line = "  "+item
+                if len(line) + len(item) > 40:
+                    f.write(line + "\n")
+                    line = "  " + item
                 else:
                     line += item
-            f.write(line+"\n\n")
+            if line.strip():
+                f.write(line + "\n\n")
 
-    print("终极版分类完成 → duey.txt")
+if __name__ == "__main__":
+    name_to_cats = parse_file(INPUT_FILE)
+    cat_to_names = invert_mapping(name_to_cats)
+    write_output(cat_to_names, OUTPUT_FILE)
+    print(f"分类抽取完成 → {OUTPUT_FILE}")
