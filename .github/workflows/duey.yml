@@ -1,4 +1,4 @@
-name: 自动提取与分类
+name: 提取分类
 
 on:
   workflow_dispatch:
