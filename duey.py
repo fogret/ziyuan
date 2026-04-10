@@ -1,84 +1,41 @@
 import re
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
-# 输入文件：就是你发的这种带「央视频道：」「付费频道：」的大文件
-INPUT_FILE = "_cctv-1_cctv_1775827272916.txt"
+INPUT_FILE = "yings.txt"
 OUTPUT_FILE = "duey.txt"
 
-# 允许的分类名（顺序可改）
-CATEGORY_ORDER = [
-    "央视频道","付费频道","卫视频道","地方频道","影剧频道",
-    "数字频道","音乐频道","综娱频道","记录频道","港澳频道",
-    "国际频道","少儿频道","动漫频道","直播频道","游戏频道"
-]
-
-def normalize_name(name: str) -> str:
-    n = name.strip()
-    if not n:
-        return ""
-    # 去掉结尾常见修饰
-    n = re.sub(r"[，,。.\s]+$", "", n)
-    return n
-
-def parse_file(path: str):
-    """
-    遍历整个文件：
-    - 遇到「xxx频道：」就切换当前分类
-    - 其它行按逗号拆分频道名，归到当前分类
-    """
+# 解析 yings.txt
+def parse_file(path):
     name_to_cats = defaultdict(set)
     current_cat = None
 
+    # 匹配 “xxx频道：”
     cat_pattern = re.compile(r"^\s*(.+?)频道：\s*$")
 
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.rstrip("\n")
 
-            # 1. 判断是不是「xxx频道：」
+            # 1. 判断是否是分类标题
             m = cat_pattern.match(line)
             if m:
-                title = m.group(1).strip()
-                # 只接受在我们预设里的分类
-                if title in CATEGORY_ORDER:
-                    current_cat = title
-                else:
-                    # 其它类似「港澳频道」「国际频道」也可以自动接入
-                    current_cat = title
-                    if title not in CATEGORY_ORDER:
-                        CATEGORY_ORDER.append(title)
+                current_cat = m.group(1).strip()
                 continue
 
-            # 2. 普通行：在当前分类下拆频道名
-            if current_cat is None:
+            # 2. 普通行（频道名）
+            if not current_cat:
                 continue
 
-            # 去掉前导缩进
-            line = line.strip()
-            if not line:
-                continue
-
-            # 有些行是「xxx频道：」的延续，这里再防一手
-            if line.endswith("频道："):
-                continue
-
-            parts = [p for p in line.split(",") if p.strip()]
+            parts = [p.strip() for p in line.split(",") if p.strip()]
             for p in parts:
-                name = normalize_name(p)
-                if not name:
+                if p.endswith("："):
                     continue
-                # 排除类似「更新时间2026.4.10」这种
-                if "更新时间" in name:
-                    continue
-                name_to_cats[name].add(current_cat)
+                name_to_cats[p].add(current_cat)
 
     return name_to_cats
 
+# 反转映射：分类 → 频道列表
 def invert_mapping(name_to_cats):
-    """
-    把「频道名 → 多个分类」反转成
-    「分类 → 频道名列表」
-    """
     cat_to_names = defaultdict(list)
     for name, cats in name_to_cats.items():
         for c in cats:
@@ -88,26 +45,23 @@ def invert_mapping(name_to_cats):
         cat_to_names[c] = sorted(set(cat_to_names[c]))
     return cat_to_names
 
-def write_output(cat_to_names, path: str):
-    with open(path, "w", encoding="utf-8") as f:
-        # 按预设顺序输出
-        for cat in CATEGORY_ORDER:
-            if cat not in cat_to_names:
-                continue
-            f.write(f"{cat}：\n")
+# 输出 duey.txt
+def write_output(cat_to_names):
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        for cat, items in cat_to_names.items():
+            f.write(f"{cat}频道：\n")
             line = "  "
-            for name in cat_to_names[cat]:
+            for name in items:
                 item = f"{name}, "
                 if len(line) + len(item) > 40:
                     f.write(line + "\n")
                     line = "  " + item
                 else:
                     line += item
-            if line.strip():
-                f.write(line + "\n\n")
+            f.write(line + "\n\n")
 
 if __name__ == "__main__":
     name_to_cats = parse_file(INPUT_FILE)
     cat_to_names = invert_mapping(name_to_cats)
-    write_output(cat_to_names, OUTPUT_FILE)
-    print(f"分类抽取完成 → {OUTPUT_FILE}")
+    write_output(cat_to_names)
+    print("分类完成 → duey.txt")
