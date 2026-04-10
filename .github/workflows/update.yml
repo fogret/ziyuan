@@ -1,58 +1,29 @@
-name: 提取频道名到 yings.txt
+name: 提取分类生成yings
 
 on:
-  workflow_dispatch:   # 手动运行
-  push:
-    branches: [ Jsnzkpg ]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 21 * * *"  # 北京时间早上5点运行
 
 jobs:
-  extract:
+  run-yings:
     runs-on: ubuntu-latest
-    steps:
-      - name: 拉取代码
-        uses: actions/checkout@v4
-        with:
-          ref: Jsnzkpg
 
-      - name: 设置 Python
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.11"
 
-      - name: 安装依赖
-        run: pip install requests
-
-      - name: 拉取 M3U 并提取频道名
+      - name: Run extractor
         run: |
-          cat > extract.py << 'EOF'
-          import requests
+          python3 mian.py
 
-          m3u_url = "https://raw.githubusercontent.com/Jsnzkpg/Jsnzkpg/Jsnzkpg/Jsnzkpg1.m3u"
-          r = requests.get(m3u_url)
-          lines = r.text.splitlines()
-
-          channels = []
-          for line in lines:
-              line = line.strip()
-              if line.startswith("#EXTINF"):
-                  parts = line.split(",", 1)
-                  if len(parts) == 2:
-                      name = parts[1].strip()
-                      channels.append(name)
-
-          # 去重
-          unique = list(dict.fromkeys(channels))
-
-          with open("yings.txt", "w", encoding="utf-8") as f:
-              f.write("\n".join(unique))
-          EOF
-
-          python extract.py
-
-      - name: 提交并推送
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add yings.txt
-          git commit -m "更新频道列表 yings.txt" || exit 0
-          git push
+      - name: Upload yings.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: yings
+          path: yings.txt
