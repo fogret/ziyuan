@@ -1,4 +1,4 @@
-name: 提取分类生成yings
+name: 提取分类生成
 
 on:
   workflow_dispatch:
