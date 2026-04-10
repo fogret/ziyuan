@@ -1,5 +1,6 @@
 import os
 import re
+import requests
 
 def log(msg):
     print(msg, flush=True)
@@ -8,46 +9,48 @@ extinf_re = re.compile(
     r'#EXTINF:[^\n]*group-title="(?P<group>[^"]*)"[^\n]*,(?P<name>.+)$'
 )
 
-def extract_channels():
-    log("开始读取 data.txt")
+def download_m3u(url):
+    log(f"下载直播源内容: {url}")
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.text
+    except Exception as e:
+        log(f"下载失败: {e}")
+        return ""
+
+def extract_channels(m3u_text):
+    categories = {}
+
+    for line in m3u_text.splitlines():
+        line = line.strip()
+        if not line.startswith("#EXTINF"):
+            continue
+
+        m = extinf_re.match(line)
+        if not m:
+            continue
+
+        group = m.group("group").strip() or "未分类"
+        name = m.group("name").strip() or "未命名"
+
+        if group not in categories:
+            categories[group] = []
+        categories[group].append(name)
+
+    return categories
+
+def build_yings_txt():
     root = os.getcwd()
     data_file = os.path.join(root, "data.txt")
 
-    if not os.path.exists(data_file):
-        log("data.txt 不存在")
-        return {}
-
-    categories = {}
-
     with open(data_file, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line.startswith("#EXTINF"):
-                continue
+        url = f.read().strip()
 
-            m = extinf_re.match(line)
-            if not m:
-                log(f"未匹配到 EXTINF 格式: {line}")
-                continue
+    m3u_text = download_m3u(url)
+    categories = extract_channels(m3u_text)
 
-            group = m.group("group").strip() or "未分类"
-            name = m.group("name").strip() or "未命名"
-
-            log(f"分类: {group}  频道: {name}")
-
-            if group not in categories:
-                categories[group] = []
-            categories[group].append(name)
-
-    log(f"共解析到 {len(categories)} 个分类")
-    return categories
-
-
-def build_yings_txt():
-    log("开始生成 yings.txt")
-    categories = extract_channels()
-
-    out_file = os.path.join(os.getcwd(), "yings.txt")
+    out_file = os.path.join(root, "yings.txt")
     with open(out_file, 'w', encoding='utf-8') as f:
         for cat, names in categories.items():
             f.write(f"{cat}\n")
@@ -56,10 +59,6 @@ def build_yings_txt():
             f.write("\n")
 
     log("yings.txt 写入完成")
-    log(f"文件路径: {out_file}")
-
 
 if __name__ == "__main__":
-    log("开始执行 main.py")
     build_yings_txt()
-    log("main.py 执行结束")
