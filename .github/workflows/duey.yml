@@ -1,4 +1,4 @@
-name: 分类生成 duey.text
+name: 自动分类生成 duey.txt
 
 on:
   workflow_dispatch:
@@ -18,7 +18,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run duey.py (分类生成 duey.txt)
+      - name: Install dependencies
+        run: |
+          pip install -U sentence-transformers
+          pip install -U torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Run duey.py (生成 duey.txt)
         run: python3 duey.py
 
       - name: Commit and Push duey.txt
