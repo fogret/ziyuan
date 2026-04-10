@@ -16,24 +16,15 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: 去重 duey.txt（按标准频道名去重）
-        run: |
-          awk -F '=>' '!seen[$2]++' duey.txt > duey_dedup.txt
-          mv duey_dedup.txt duey.txt
-
       - name: Run fenl.py (生成 fenl.txt)
         run: python3 fenl.py
-
-      - name: 排序 fenl.txt（按频道名排序）
-        run: |
-          sort fenl.txt -o fenl.txt
 
       - name: Commit and Push fenl.txt
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          git add fenl.txt duey.txt
-          git commit -m "Auto update fenl.txt (dedupe + sort)" || echo "No changes"
+          git add fenl.txt
+          git commit -m "Auto update fenl.txt" || echo "No changes"
           git push
 
       - name: Upload fenl.txt artifact
