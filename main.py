@@ -1,41 +1,48 @@
-import requests
+import os
 import re
+from urllib.parse import urlparse
 
-def extract_channel_names():
-    url = "https://raw.githubusercontent.com/Jsnzkpg/Jsnzkpg/Jsnzkpg/Jsnzkpg1.m3u"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    }
+def extract_links():
+    root = os.getcwd()
+    data_file = os.path.join(root, "data.txt")
 
-    try:
-        resp = requests.get(url, headers=headers, timeout=15)
-        resp.raise_for_status()
-        lines = resp.text.splitlines()
+    pattern = re.compile(r'https?://[^\s\'"]+', re.IGNORECASE)
 
-        channels = []
-        for line in lines:
-            line = line.strip()
-            if line.startswith("#EXTINF"):
-                # 取逗号后面的频道名
-                parts = line.split(",", 1)
-                if len(parts) == 2:
-                    name = parts[1].strip()
-                    if name:
-                        channels.append(name)
+    links = []
+    with open(data_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            links.extend(pattern.findall(line))
 
-        # 去重
-        channels = list(dict.fromkeys(channels))
+    return links
 
-        # 写入当前目录 yings.txt
-        with open("yings.txt", "w", encoding="utf-8") as f:
-            f.write("\n".join(channels))
 
-        print(f"成功提取 {len(channels)} 个频道名，已保存到 yings.txt")
+def get_name_from_url(url):
+    path = urlparse(url).path
+    base = os.path.basename(path)
+    name = os.path.splitext(base)[0]
+    return name if name else "未命名"
 
-    except Exception as e:
-        print("获取失败：", e)
-        print("可能是网络问题，可以手动复制m3u内容保存为 Jsnzkpg1.m3u 放同目录，我再给你读本地文件的版本")
 
-if __name__ == "__main__":
-    extract_channel_names()
+def build_yings_txt():
+    links = extract_links()
+
+    categories = {}
+
+    for url in links:
+        name = get_name_from_url(url)
+        category = name  # 分类名称 = 原链接里的名称
+
+        if category not in categories:
+            categories[category] = []
+
+        categories[category].append(name)
+
+    root = os.getcwd()
+    out_file = os.path.join(root, "yings.txt")
+
+    with open(out_file, 'w', encoding='utf-8') as f:
+        for cat, names in categories.items():
+            f.write(f"{cat}\n")
+            for n in names:
+                f.write(f"  {n}\n")
+            f.write("\n")
