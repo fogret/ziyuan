@@ -1,57 +1,52 @@
 import re
-from collections import defaultdict
+from sentence_transformers import SentenceTransformer, util
 
-INPUT_FILE = "yings.txt"
-OUTPUT_FILE = "duey.txt"
+# 你的 15 类
+CATEGORIES = [
+    "央视频道","付费频道","卫视频道","地方频道","影剧频道",
+    "数字频道","音乐频道","综娱频道","记录频道","港澳频道",
+    "国际频道","少儿频道","动漫频道","直播频道","游戏频道"
+]
 
-# 解析 yings.txt
-def parse_file(path):
-    name_to_cats = defaultdict(set)
-    current_cat = None
+# 加载中文语义模型（一次下载，之后永久使用）
+model = SentenceTransformer("shibing624/text2vec-base-chinese")
 
-    # 匹配 “xxx频道：”
-    cat_pattern = re.compile(r"^\s*(.+?)频道：\s*$")
+# 编码 15 类
+cat_emb = model.encode(CATEGORIES, convert_to_tensor=True)
 
+def normalize(name):
+    n = name.strip()
+    up = n.upper()
+
+    if "CCTV5+" in up or "CCTV-5+" in up:
+        return "CCTV-5+"
+
+    m = re.search(r"CCTV[-_ ]?0?(\d+)", up)
+    if m:
+        return f"CCTV-{m.group(1)}"
+
+    return n
+
+def load_yings(path="yings.txt"):
+    out = []
     with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.rstrip("\n")
+        for raw in f:
+            parts = [p.strip() for p in re.split(r"[,\s]+", raw) if p.strip()]
+            out.extend(parts)
+    return out
 
-            # 1. 判断是否是分类标题
-            m = cat_pattern.match(line)
-            if m:
-                current_cat = m.group(1).strip()
-                continue
+def classify(name):
+    emb = model.encode(name, convert_to_tensor=True)
+    sim = util.cos_sim(emb, cat_emb)[0]
+    idx = sim.argmax().item()
+    return CATEGORIES[idx]
 
-            # 2. 普通行（频道名）
-            if not current_cat:
-                continue
-
-            parts = [p.strip() for p in line.split(",") if p.strip()]
-            for p in parts:
-                if p.endswith("："):
-                    continue
-                name_to_cats[p].add(current_cat)
-
-    return name_to_cats
-
-# 反转映射：分类 → 频道列表
-def invert_mapping(name_to_cats):
-    cat_to_names = defaultdict(list)
-    for name, cats in name_to_cats.items():
-        for c in cats:
-            cat_to_names[c].append(name)
-    # 去重 + 排序
-    for c in cat_to_names:
-        cat_to_names[c] = sorted(set(cat_to_names[c]))
-    return cat_to_names
-
-# 输出 duey.txt
-def write_output(cat_to_names):
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        for cat, items in cat_to_names.items():
-            f.write(f"{cat}频道：\n")
+def write_output(result, path="duey.txt"):
+    with open(path, "w", encoding="utf-8") as f:
+        for cat in CATEGORIES:
+            f.write(f"{cat}：\n")
             line = "  "
-            for name in items:
+            for name in sorted(set(result.get(cat, []))):
                 item = f"{name}, "
                 if len(line) + len(item) > 40:
                     f.write(line + "\n")
@@ -61,7 +56,13 @@ def write_output(cat_to_names):
             f.write(line + "\n\n")
 
 if __name__ == "__main__":
-    name_to_cats = parse_file(INPUT_FILE)
-    cat_to_names = invert_mapping(name_to_cats)
-    write_output(cat_to_names)
-    print("分类完成 → duey.txt")
+    yings = load_yings()
+    result = {c: [] for c in CATEGORIES}
+
+    for name in yings:
+        clean = normalize(name)
+        cat = classify(clean)
+        result[cat].append(clean)
+
+    write_output(result)
+    print("按 15 类自动分类完成 → duey.txt")
