@@ -3,71 +3,108 @@ import re
 INPUT_FILE = "yings.txt"
 OUTPUT_FILE = "duey.txt"
 
-# 会被删除的垃圾标签（来源、线路、协议、平台等）
-REMOVE_TAGS = [
-    r"\[.*?\]", r"\(.*?\)", r"（.*?）",
-    r"电信", r"移动", r"联通", r"广电", r"酒店",
-    r"A三网", r"B三网", r"rtmp协议",
-    r"HD", r"FHD", r"4K", r"8K",
-    r"源", r"线路", r"频道", r"直播", r"超清", r"蓝光"
-]
-
-# 会被替换为空的符号
-REMOVE_SYMBOLS = [
-    r"-HD", r"-FHD", r"-4K", r"-8K",
-    r"_HD", r"_FHD", r"_4K", r"_8K",
-    r"HD", r"FHD", r"4K", r"8K",
-    r" ", r"　"
-]
-
+# -------------------------
+# 标准化频道名（核心功能）
+# -------------------------
 def clean_name(name):
-    # 删除标签
-    for tag in REMOVE_TAGS:
-        name = re.sub(tag, "", name, flags=re.IGNORECASE)
 
-    # 删除符号
-    for sym in REMOVE_SYMBOLS:
-        name = name.replace(sym, "")
+    name = name.strip()
 
-    # 删除多余符号
-    name = re.sub(r"[^\u4e00-\u9fa5A-Za-z0-9\-]+", "", name)
+    # -------------------------
+    # CCTV 主频道（1~17）
+    # -------------------------
+    m = re.match(r"^CCTV[- ]?(\d+)", name, re.I)
+    if m:
+        num = int(m.group(1))
+        if 1 <= num <= 17:
+            return f"CCTV-{num}"
 
-    # 特殊修正：CCTV
-    name = name.replace("CCTV", "CCTV-")
-    name = name.replace("CCTV--", "CCTV-")
-    name = re.sub(r"CCTV-$", "", name)
+    # cctv1 → CCTV-1
+    m = re.match(r"^cctv(\d+)$", name, re.I)
+    if m:
+        num = int(m.group(1))
+        if 1 <= num <= 17:
+            return f"CCTV-{num}"
 
-    # 去掉重复的 "-"
-    name = re.sub(r"-+", "-", name)
+    # 中央11台 → CCTV-11
+    m = re.match(r"^中央(\d+)台$", name)
+    if m:
+        num = int(m.group(1))
+        if 1 <= num <= 17:
+            return f"CCTV-{num}"
 
-    return name.strip()
+    # -------------------------
+    # CCTV 付费频道（全部保留主名）
+    # -------------------------
+    if name.upper().startswith("CCTV"):
+        return name.replace("高清", "").replace("HD", "").strip()
 
-def process():
-    seen = set()
-    out = []
+    # -------------------------
+    # 卫视频道（统一格式）
+    # -------------------------
+    if "卫视" in name:
+        return name.replace("高清", "").replace("HD", "").strip()
+
+    # -------------------------
+    # 咪视界 / 咪视通 / 百视通 / NewTV / SCTV
+    # -------------------------
+    if name.startswith("咪视界"):
+        return "咪视界"
+
+    if name.startswith("咪视通"):
+        return "咪视通"
+
+    if name.startswith("百视通"):
+        return "百视通"
+
+    if name.startswith("NewTV"):
+        return name
+
+    if re.match(r"^SCTV\d+$", name):
+        return "SCTV"
+
+    # -------------------------
+    # 音乐频道（去掉数字）
+    # -------------------------
+    name = re.sub(r"精选\d+首", "精选", name)
+    name = name.replace("完整版", "")
+
+    # -------------------------
+    # 美女展示类（去掉数字）
+    # -------------------------
+    if re.match(r"^美女.*\d+$", name):
+        return re.sub(r"\d+$", "", name)
+
+    # -------------------------
+    # 默认清洗
+    # -------------------------
+    name = name.replace("高清", "")
+    name = name.replace("频道", "")
+    name = name.replace("电视台", "")
+    name = name.replace("综合", "")
+    name = name.replace("娱乐", "")
+    name = name.strip()
+
+    return name
+
+# -------------------------
+# 主程序：读取 yings.txt → 输出 duey.txt
+# -------------------------
+if __name__ == "__main__":
 
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            if "," not in line:
-                continue
-
-            name, url = line.strip().split(",", 1)
-            name = clean_name(name)
-
-            if not name:
-                continue
-
-            # 去重（按清洗后的标准名）
-            if name in seen:
-                continue
-            seen.add(name)
-
-            out.append(f"{name} => {name}")
+        lines = f.readlines()
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write("\n".join(out))
+        for line in lines:
+            if "=>" not in line:
+                continue
 
-    print("已生成 duey.txt（重写版：彻底清洗 + 去重）")
+            raw, _ = line.strip().split("=>")
+            raw = raw.strip()
 
-if __name__ == "__main__":
-    process()
+            std = clean_name(raw)
+
+            f.write(f"{raw} => {std}\n")
+
+    print("频道名标准化完成 → duey.txt")
