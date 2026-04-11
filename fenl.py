@@ -7,7 +7,7 @@ OUTPUT_FILE = "fenl.txt"
 ITEMS_PER_LINE = 8
 
 CATEGORIES = [
-    "央视频道","卫视频道","地方频道","港澳频道","国际频道",
+    "央视频道","付费频道","卫视频道","地方频道","港澳频道","国际频道",
     "数字频道","影剧频道","综艺频道","体育频道","音乐频道",
     "动漫频道","少儿频道","记录频道","游戏频道","直播频道"
 ]
@@ -38,75 +38,45 @@ def weishi_sort_key(name):
     return (999, name)
 
 # -------------------------
-# 分类规则（强制归类版）
+# 分类规则（央视频道 + 付费频道 + 卫视频道）
 # -------------------------
 def classify(name):
 
-    # 央视频道
-    if re.match(r"^CCTV(-\d+)?$", name):
-        return "央视频道"
-    if name.startswith("CCTV-"):
-        num = name.replace("CCTV-", "")
-        if num.isdigit():
+    # -----------------------------------
+    # 央视频道（严格 CCTV 1~17）
+    # -----------------------------------
+    m = re.match(r"^CCTV-(\d+)", name, re.I)
+    if m:
+        num = int(m.group(1))
+        if 1 <= num <= 17:
             return "央视频道"
-        return "数字频道"
 
-    # 卫视频道
+    # 兼容：cctv1 / 中央11台
+    if re.match(r"^cctv(\d+)$", name, re.I):
+        num = int(re.findall(r"\d+", name)[0])
+        if 1 <= num <= 17:
+            return "央视频道"
+
+    if re.match(r"^中央(\d+)台$", name):
+        num = int(re.findall(r"\d+", name)[0])
+        if 1 <= num <= 17:
+            return "央视频道"
+
+    # -----------------------------------
+    # 付费频道（所有 CCTV 付费频道）
+    # -----------------------------------
+    if name.upper().startswith("CCTV"):
+        return "付费频道"
+
+    # -----------------------------------
+    # 卫视频道（所有含“卫视”）
+    # -----------------------------------
     if "卫视" in name:
         return "卫视频道"
 
-    # 港澳频道
-    if any(k in name for k in ["TVB","翡翠","明珠","凤凰","澳视","台视","中视","华视","民视","ViuTV"]):
-        return "港澳频道"
-
-    # 国际频道
-    if any(k in name for k in ["CNN","BBC","NHK","TRT","DW","FOX","GLOBAL","ALJAZEERA","NEWS24"]):
-        return "国际频道"
-
-    # 数字频道（央视付费 + NewTV + SCTV + 黑莓）
-    if any(k in name for k in [
-        "风云","怀旧","兵器","世界地理","女性时尚","第一剧场","电视指南","高尔夫",
-        "NewTV","SCTV","黑莓","精品","睛彩","专区"
-    ]):
-        return "数字频道"
-
-    # 地方频道
-    if any(k in name for k in ["新闻","都市","公共","文旅","政法","经视","电视台","综合"]) and len(name) <= 12:
-        return "地方频道"
-
-    # 体育频道
-    if any(k in name for k in ["体育","足球","篮球","赛事","UFC","ESPN","羽毛球","拳击","竞技"]):
-        return "体育频道"
-
-    # 音乐频道
-    if any(k in name for k in ["音乐","演唱会","歌曲","DJ","点歌","精选"]):
-        return "音乐频道"
-
-    # 动漫频道
-    if any(k in name for k in ["动漫","动画","柯南","火影","海贼","龙珠","哆啦A梦","小新","丸子"]):
-        return "动漫频道"
-
-    # 少儿频道
-    if any(k in name for k in ["少儿","卡通","儿童","亲子"]):
-        return "少儿频道"
-
-    # 游戏频道
-    if any(k in name for k in ["电竞","游戏","王者荣耀","和平精英","DOTA","CF","DNF","LOL","端游","手游"]):
-        return "游戏频道"
-
-    # 记录频道
-    if any(k in name for k in ["纪录","纪实","探索","通史","航拍"]):
-        return "记录频道"
-
-    # 综艺频道
-    if any(k in name for k in ["综艺","娱乐","搞笑","脱口秀"]):
-        return "综艺频道"
-
-    # 影剧频道
-    if any(k in name for k in ["电影","剧场","影院","影","大片","恐怖片","动作片","喜剧片"]):
-        return "影剧频道"
-
-    # ⭐ 强制归类：剩下的全部归入“直播频道”
+    # -----------------------------------
+    # 其它全部归入直播频道（未匹配也列出）
+    # -----------------------------------
     return "直播频道"
 
 # -------------------------
@@ -169,4 +139,4 @@ if __name__ == "__main__":
         result[cat].append(std)
 
     write_output(result)
-    print("分类完成（强制归类版） → fenl.txt")
+    print("分类完成（央视频道 + 付费频道 + 卫视频道 + 未匹配也列出） → fenl.txt")
