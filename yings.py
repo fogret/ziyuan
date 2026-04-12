@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import requests
 
 def log(msg):
@@ -40,7 +41,7 @@ def parse_extinf(line):
         return "未分类", line.split(",", 1)[1].strip()
     return None, None
 
-def extract_channels(text, categories, seen):
+def parse_m3u(text, categories, seen):
     count = 0
     for line in text.splitlines():
         line = line.strip()
@@ -55,9 +56,63 @@ def extract_channels(text, categories, seen):
         categories.setdefault(group, []).append(name)
         count += 1
         if count % 100 == 0:
-            log(f"    解析进度：已处理 {count} 条频道")
-    log(f"    本源解析完成：{count} 条频道")
+            log(f"    M3U 解析进度：{count}")
+    log(f"    M3U 解析完成：{count}")
     return categories
+
+def parse_txt(text, categories, seen):
+    count = 0
+    for line in text.splitlines():
+        name = line.strip()
+        if not name or name.startswith("#"):
+            continue
+        if name in seen:
+            continue
+        seen.add(name)
+        categories.setdefault("未分类", []).append(name)
+        count += 1
+    log(f"    TXT 解析完成：{count}")
+    return categories
+
+def parse_json(text, categories, seen):
+    try:
+        data = json.loads(text)
+    except:
+        log("    × JSON 解析失败")
+        return categories
+
+    count = 0
+    if isinstance(data, dict):
+        items = data.values()
+    else:
+        items = data
+
+    for item in items:
+        if isinstance(item, dict):
+            name = item.get("name") or item.get("channel") or ""
+            group = item.get("group") or item.get("category") or "未分类"
+        else:
+            continue
+
+        name = str(name).strip()
+        group = str(group).strip()
+
+        if not name or name in seen:
+            continue
+
+        seen.add(name)
+        categories.setdefault(group, []).append(name)
+        count += 1
+
+    log(f"    JSON 解析完成：{count}")
+    return categories
+
+def detect_format(text):
+    if "#EXTINF" in text:
+        return "m3u"
+    if text.strip().startswith("{") or text.strip().startswith("["):
+        return "json"
+    return "txt"
 
 def build_yings():
     root = os.getcwd()
@@ -67,7 +122,7 @@ def build_yings():
     with open(data_file, "r", encoding="utf-8") as f:
         urls = [x.strip() for x in f.readlines() if x.strip()]
 
-    log(f"[1/5] 共 {len(urls)} 条源，将逐条下载并合并")
+    log(f"[1/5] 共 {len(urls)} 条源，将逐条下载并解析")
 
     categories = {}
     seen = set()
@@ -77,8 +132,16 @@ def build_yings():
         text = download(url)
         if not text:
             continue
-        log("    开始解析频道…")
-        extract_channels(text, categories, seen)
+
+        fmt = detect_format(text)
+        log(f"    检测到格式：{fmt}")
+
+        if fmt == "m3u":
+            parse_m3u(text, categories, seen)
+        elif fmt == "json":
+            parse_json(text, categories, seen)
+        else:
+            parse_txt(text, categories, seen)
 
     log(f"[3/5] 全部源解析完成，总计 {len(seen)} 条频道")
 
@@ -100,7 +163,7 @@ def build_yings():
                 f.write(line.rstrip() + "\n")
             f.write("\n")
 
-    log("[5/5] yings.txt 写入完成（仅分类名 + 频道名）")
+    log("[5/5] yings.txt 写入完成")
 
 if __name__ == "__main__":
     build_yings()
