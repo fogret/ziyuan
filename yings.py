@@ -83,7 +83,7 @@ def build_yings():
     log(f"[3/5] 全部源解析完成，总计 {len(seen)} 条频道")
 
     out_file = os.path.join(root, "yings.txt")
-    log("[4/5] 写入 yings.txt")
+    log("[4/5] 写入 yings.txt（分类名 + 频道名）")
 
     with open(out_file, "w", encoding="utf-8") as f:
         for cat, names in categories.items():
@@ -100,7 +100,7 @@ def build_yings():
                 f.write(line.rstrip() + "\n")
             f.write("\n")
 
-    log("[5/5] yings.txt 写入完成（多源合并 + 横向输出 + 自动换行）")
+    log("[5/5] yings.txt 写入完成（仅分类名 + 频道名）")
 
 if __name__ == "__main__":
     build_yings()
