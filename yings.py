@@ -48,14 +48,12 @@ def parse_m3u(text, categories, seen):
         if not line.startswith("#EXTINF"):
             continue
         group, name = parse_extinf(line)
-        if not name:
-            continue
-        if name in seen:
+        if not name or name in seen:
             continue
         seen.add(name)
         categories.setdefault(group, []).append(name)
         count += 1
-        if count % 100 == 0:
+        if count % 200 == 0:
             log(f"    M3U 解析进度：{count}")
     log(f"    M3U 解析完成：{count}")
     return categories
@@ -71,6 +69,8 @@ def parse_txt(text, categories, seen):
         seen.add(name)
         categories.setdefault("未分类", []).append(name)
         count += 1
+        if count % 200 == 0:
+            log(f"    TXT 解析进度：{count}")
     log(f"    TXT 解析完成：{count}")
     return categories
 
@@ -82,27 +82,20 @@ def parse_json(text, categories, seen):
         return categories
 
     count = 0
-    if isinstance(data, dict):
-        items = data.values()
-    else:
-        items = data
+    items = data.values() if isinstance(data, dict) else data
 
     for item in items:
-        if isinstance(item, dict):
-            name = item.get("name") or item.get("channel") or ""
-            group = item.get("group") or item.get("category") or "未分类"
-        else:
+        if not isinstance(item, dict):
             continue
-
-        name = str(name).strip()
-        group = str(group).strip()
-
+        name = str(item.get("name") or item.get("channel") or "").strip()
+        group = str(item.get("group") or item.get("category") or "未分类").strip()
         if not name or name in seen:
             continue
-
         seen.add(name)
         categories.setdefault(group, []).append(name)
         count += 1
+        if count % 200 == 0:
+            log(f"    JSON 解析进度：{count}")
 
     log(f"    JSON 解析完成：{count}")
     return categories
@@ -143,10 +136,10 @@ def build_yings():
         else:
             parse_txt(text, categories, seen)
 
-    log(f"[3/5] 全部源解析完成，总计 {len(seen)} 条频道")
+    log(f"[3/5] 全部源解析完成，总计 {len(seen)} 条频道（已去重）")
 
     out_file = os.path.join(root, "yings.txt")
-    log("[4/5] 写入 yings.txt（分类名 + 频道名）")
+    log("[4/5] 写入 yings.txt（横向 + 自动换行）")
 
     with open(out_file, "w", encoding="utf-8") as f:
         for cat, names in categories.items():
