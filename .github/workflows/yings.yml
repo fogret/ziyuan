@@ -26,8 +26,8 @@ jobs:
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          git add yings.txt
-          git commit -m "Update yings.txt" || echo "No changes to commit"
+          git add -A
+          git commit -m "Update yings.txt" --allow-empty
           git push
 
       - name: Upload yings.txt
