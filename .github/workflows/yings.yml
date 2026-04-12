@@ -2,8 +2,6 @@ name: 提取频道
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 21 * * *"
 
 jobs:
   run-yings:
@@ -12,8 +10,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          path: .
 
       - name: Setup Python
         uses: actions/setup-python@v5
