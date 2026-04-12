@@ -10,13 +10,13 @@ def wlen(s):
     return sum(2 if ord(c) > 127 else 1 for c in s)
 
 def download(url):
-    log(f"  → 下载: {url}")
+    log(f"  -> Download: {url}")
     try:
         r = requests.get(url, timeout=10)
         r.raise_for_status()
         return r.text.lstrip("\ufeff")
     except Exception as e:
-        log(f"    × 下载失败: {e}")
+        log(f"    x Download failed: {e}")
         return ""
 
 extinf_re = re.compile(
@@ -41,6 +41,22 @@ def parse_extinf(line):
         return "未分类", line.split(",", 1)[1].strip()
     return None, None
 
+def clean_txt_name(line):
+    line = line.strip()
+    if not line:
+        return ""
+    if "更新" in line:
+        return ""
+    if "#genre#" in line:
+        return ""
+    if "," in line:
+        name = line.split(",", 1)[0].strip()
+    else:
+        name = line
+    if name.startswith("http"):
+        return ""
+    return name.strip()
+
 def parse_m3u(text, categories, seen):
     count = 0
     for line in text.splitlines():
@@ -54,36 +70,32 @@ def parse_m3u(text, categories, seen):
         categories.setdefault(group, []).append(name)
         count += 1
         if count % 200 == 0:
-            log(f"    M3U 解析进度：{count}")
-    log(f"    M3U 解析完成：{count}")
+            log(f"    M3U progress: {count}")
+    log(f"    M3U done: {count}")
     return categories
 
 def parse_txt(text, categories, seen):
     count = 0
     for line in text.splitlines():
-        name = line.strip()
-        if not name or name.startswith("#"):
-            continue
-        if name in seen:
+        name = clean_txt_name(line)
+        if not name or name in seen:
             continue
         seen.add(name)
         categories.setdefault("未分类", []).append(name)
         count += 1
         if count % 200 == 0:
-            log(f"    TXT 解析进度：{count}")
-    log(f"    TXT 解析完成：{count}")
+            log(f"    TXT progress: {count}")
+    log(f"    TXT done: {count}")
     return categories
 
 def parse_json(text, categories, seen):
     try:
         data = json.loads(text)
     except:
-        log("    × JSON 解析失败")
+        log("    x JSON parse failed")
         return categories
-
     count = 0
     items = data.values() if isinstance(data, dict) else data
-
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -95,9 +107,8 @@ def parse_json(text, categories, seen):
         categories.setdefault(group, []).append(name)
         count += 1
         if count % 200 == 0:
-            log(f"    JSON 解析进度：{count}")
-
-    log(f"    JSON 解析完成：{count}")
+            log(f"    JSON progress: {count}")
+    log(f"    JSON done: {count}")
     return categories
 
 def detect_format(text):
@@ -111,24 +122,22 @@ def build_yings():
     root = os.getcwd()
     data_file = os.path.join(root, "data.txt")
 
-    log("[0/5] 读取 data.txt")
+    log("[0/5] Read data.txt")
     with open(data_file, "r", encoding="utf-8") as f:
         urls = [x.strip() for x in f.readlines() if x.strip()]
 
-    log(f"[1/5] 共 {len(urls)} 条源，将逐条下载并解析")
+    log(f"[1/5] Total {len(urls)} sources")
 
     categories = {}
     seen = set()
 
     for idx, url in enumerate(urls, 1):
-        log(f"[2/5] 处理源 {idx}/{len(urls)}")
+        log(f"[2/5] Source {idx}/{len(urls)}")
         text = download(url)
         if not text:
             continue
-
         fmt = detect_format(text)
-        log(f"    检测到格式：{fmt}")
-
+        log(f"    Format: {fmt}")
         if fmt == "m3u":
             parse_m3u(text, categories, seen)
         elif fmt == "json":
@@ -136,18 +145,17 @@ def build_yings():
         else:
             parse_txt(text, categories, seen)
 
-    log(f"[3/5] 全部源解析完成，总计 {len(seen)} 条频道（已去重）")
+    log(f"[3/5] Total channels: {len(seen)}")
 
     out_file = os.path.join(root, "yings.txt")
-
     if os.path.exists(out_file):
         os.remove(out_file)
 
-    log("[4/5] 写入 yings.txt（横向 + 自动换行）")
+    log("[4/5] Writing yings.txt")
 
     with open(out_file, "w", encoding="utf-8") as f:
         for cat, names in categories.items():
-            f.write(f"{cat}：\n")
+            f.write(f"{cat}:\n")
             line = "  "
             for name in names:
                 item = f"{name}, "
@@ -160,7 +168,7 @@ def build_yings():
                 f.write(line.rstrip() + "\n")
             f.write("\n")
 
-    log("[5/5] yings.txt 写入完成（强制更新）")
+    log("[5/5] Done")
 
 if __name__ == "__main__":
     build_yings()
