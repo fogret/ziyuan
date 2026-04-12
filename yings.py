@@ -139,6 +139,11 @@ def build_yings():
     log(f"[3/5] 全部源解析完成，总计 {len(seen)} 条频道（已去重）")
 
     out_file = os.path.join(root, "yings.txt")
+
+    # 强制更新文件
+    if os.path.exists(out_file):
+        os.remove(out_file)
+
     log("[4/5] 写入 yings.txt（横向 + 自动换行）")
 
     with open(out_file, "w", encoding="utf-8") as f:
@@ -156,7 +161,7 @@ def build_yings():
                 f.write(line.rstrip() + "\n")
             f.write("\n")
 
-    log("[5/5] yings.txt 写入完成")
+    log("[5/5] yings.txt 写入完成（强制更新）")
 
 if __name__ == "__main__":
     build_yings()
