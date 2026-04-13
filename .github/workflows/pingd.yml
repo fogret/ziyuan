@@ -1,6 +1,8 @@
 name: pingd
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 20 * * *"   # 每天北京时间 4 点自动更新
 
 jobs:
   run:
@@ -13,6 +15,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+
+      - name: install requests
+        run: pip install requests
 
       - name: run pingd.py
         run: python pingd.py
