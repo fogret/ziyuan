@@ -17,7 +17,7 @@ def load(path,name):
     log(f"[OK] 读取 {name} {len(lines)} 行")
     return lines
 
-log("[START] ping.py 开始执行")
+log("[START] pingd.py 开始执行")
 
 data=load(data_file,"data.txt")
 pingd=load(pingd_file,"pingd.txt")
@@ -42,4 +42,4 @@ except Exception as e:
     log(f"[ERR] 写入 live.m3u 失败: {e}")
     sys.exit(1)
 
-log("[END] ping.py 执行完毕")
+log("[END] pingd.py 执行完毕")
