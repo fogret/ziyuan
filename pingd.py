@@ -20,7 +20,7 @@ def parse_m3u(url):
     try:
         r=requests.get(url,timeout=10)
         if r.status_code!=200:
-            log(f"[WARN] 无法读取 m3u: {url}")
+            log(f"[WARN] 无法读取 m3u: " + url)
             return []
 
         lines=r.text.splitlines()
@@ -38,7 +38,7 @@ def parse_m3u(url):
                     result.append((name,line))
                 name=None
 
-        log(f"[OK] 解析 m3u {url} 共 {len(result)} 条播放地址")
+        log(f"[OK] 解析 m3u {url} 共 {len(result)} 条")
         return result
 
     except Exception as e:
@@ -66,46 +66,37 @@ for src in raw_data:
         all_sources.append((None,src))
 
     else:
-        log(f"[WARN] 未识别格式，按普通 URL 处理: {src}")
         all_sources.append((None,src))
 
 log(f"[OK] 总共解析频道源 {len(all_sources)} 条")
 
-# 加载分类与频道
-pingd_lines=load_local(pingd_file,"pingd.txt")
-
-groups=[]
-for line in pingd_lines:
-    parts=line.replace("，"," ").replace(","," ").split()
-    if len(parts)>1:
-        groups.append((parts[0],parts[1:]))
-
-log(f"[OK] 分类 {len(groups)} 组")
+# pingd.txt 现在只包含频道名
+channels = load_local(pingd_file,"pingd.txt")
+log(f"[OK] 频道数量 {len(channels)}")
 
 # 输出
 with open(out_file,"w",encoding="utf-8") as f:
     f.write("#EXTM3U\n")
 
-    for group,chans in groups:
-        for ch in chans:
+    for ch in channels:
 
-            matched=[]
+        matched=[]
 
-            # 1. 匹配 m3u 解析出来的频道名
-            for name,url in all_sources:
-                if name and ch in name:
-                    matched.append(url)
+        # 1. 匹配 m3u 解析出来的频道名
+        for name,url in all_sources:
+            if name and ch in name:
+                matched.append(url)
 
-            # 2. 匹配 mp3/mp4/flac 等 URL（按频道名模糊匹配 URL）
-            for name,url in all_sources:
-                if name is None and ch in url:
-                    matched.append(url)
+        # 2. 匹配 mp4/mp3/flac 等 URL（按频道名模糊匹配 URL）
+        for name,url in all_sources:
+            if name is None and ch in url:
+                matched.append(url)
 
-            if not matched:
-                log(f"[MISS] 未找到频道: {ch}")
-                continue
+        if not matched:
+            log(f"[MISS] 未找到频道: {ch}")
+            continue
 
-            for url in matched:
-                f.write(f'#EXTINF:-1 group-title="{group}",{ch}\n{url}\n')
+        for url in matched:
+            f.write(f'#EXTINF:-1,{ch}\n{url}\n')
 
 log("[DONE] live.m3u 已生成")
