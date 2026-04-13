@@ -7,24 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
-      - name: find pingd.py
-        id: findfile
-        run: |
-          f=$(find . -maxdepth 3 -name "pingd.py" | head -n 1)
-          if [ -z "$f" ]; then
-            echo "pingd.py not found"
-            exit 1
-          fi
-          echo "path=$f" >> $GITHUB_OUTPUT
-          echo "found pingd.py at: $f"
-
       - name: run pingd.py
-        run: python "${{ steps.findfile.outputs.path }}"
+        run: python pingd.py
 
       - name: commit live.m3u
         run: |
