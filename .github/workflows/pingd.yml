@@ -1,9 +1,9 @@
-name: pingd
+name: ping
 on:
   workflow_dispatch:
   push:
     paths:
-      - "pingd.py"
+      - "ping.py"
       - "data.txt"
       - "pingd.txt"
 
@@ -12,14 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: setup python
-        uses: actions/setup-python@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - name: run pingd
-        run: python pingd.py
-      - name: upload live.m3u
-        uses: actions/upload-artifact@v4
+      - run: python ping.py
+      - run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add live.m3u
+          git commit -m "update live.m3u" || echo "no changes"
+          git push
+      - uses: actions/upload-artifact@v4
         with:
           name: live
           path: live.m3u
