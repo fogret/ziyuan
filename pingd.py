@@ -19,7 +19,7 @@ def parse_pingd(lines):
     names = []
     for line in lines:
         # 去掉 emoji、冒号等
-        clean = re.sub(r"[^\w\u4e00-\u9fa5,， ]+", " ", line)
+        clean = re.sub(r"[^\w\u4e00-\u9fa5,，()（） ]+", " ", line)
 
         # 按逗号分割
         parts = re.split(r"[，,]+", clean)
@@ -41,28 +41,32 @@ def parse_pingd(lines):
     return ordered
 
 # -----------------------------
-# 解析 m3u 文件
+# 解析 m3u 文件（支持增强格式）
 # -----------------------------
 def parse_m3u(url):
     try:
-        r=requests.get(url,timeout=10)
-        if r.status_code!=200:
+        r = requests.get(url, timeout=10)
+        if r.status_code != 200:
             return []
 
-        lines=r.text.splitlines()
-        result=[]
-        name=None
+        lines = r.text.splitlines()
+        result = []
+        name = None
 
         for line in lines:
-            line=line.strip()
+            line = line.strip()
+
             if line.startswith("#EXTINF"):
-                m=re.search(r",(.+)$",line)
-                if m:
-                    name=m.group(1).strip()
+                # 你的格式：#EXTINF:-1 xxx,真正名称
+                if "," in line:
+                    name = line.split(",", 1)[1].strip()
+                else:
+                    name = None
+
             elif line.startswith("http"):
                 if name:
-                    result.append((name,line))
-                name=None
+                    result.append((name, line))
+                name = None
 
         return result
 
@@ -73,8 +77,8 @@ def parse_m3u(url):
 # 从 URL 推断名称（mp4/m3u8）
 # -----------------------------
 def guess_name(url):
-    base=os.path.basename(url)
-    base=re.sub(r"\.\w+$","",base)
+    base = os.path.basename(url)
+    base = re.sub(r"\.\w+$", "", base)
     return base.strip()
 
 # -----------------------------
@@ -82,36 +86,36 @@ def guess_name(url):
 # -----------------------------
 log("开始解析 data.txt")
 
-raw_data=load_local(data_file)
+raw_data = load_local(data_file)
 
-sources={}  # {名称: [url1,url2]}
+sources = {}  # {名称: [url1,url2]}
 
 for src in raw_data:
 
     if src.endswith(".m3u"):
-        items=parse_m3u(src)
-        for name,url in items:
-            sources.setdefault(name,[]).append(url)
+        items = parse_m3u(src)
+        for name, url in items:
+            sources.setdefault(name, []).append(url)
 
     else:
-        name=guess_name(src)
+        name = guess_name(src)
         if name:
-            sources.setdefault(name,[]).append(src)
+            sources.setdefault(name, []).append(src)
 
 log(f"解析到频道数量：{len(sources)}")
 
 # -----------------------------
 # 解析 pingd.txt（横向拆竖向）
 # -----------------------------
-raw_pingd=load_local(pingd_file)
-pingd_names=parse_pingd(raw_pingd)
+raw_pingd = load_local(pingd_file)
+pingd_names = parse_pingd(raw_pingd)
 
 log(f"pingd.txt 名称数量：{len(pingd_names)}")
 
 # -----------------------------
 # 输出 m3u
 # -----------------------------
-with open(out_file,"w",encoding="utf-8") as f:
+with open(out_file, "w", encoding="utf-8") as f:
     f.write("#EXTM3U\n")
 
     for name in pingd_names:
