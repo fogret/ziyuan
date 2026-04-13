@@ -20,24 +20,26 @@ def load(path,name):
 log("[START] pingd.py 开始执行")
 
 data=load(data_file,"data.txt")
-pingd=load(pingd_file,"pingd.txt")
+pingd_lines=load(pingd_file,"pingd.txt")
 
-channels=[]
-for line in pingd:
+groups=[]  # [(分类, [频道列表])]
+for line in pingd_lines:
     parts=line.replace("，"," ").replace(","," ").split()
-    for p in parts:
-        if p not in channels:
-            channels.append(p)
+    if len(parts) > 1:
+        group=parts[0]
+        chans=parts[1:]
+        groups.append((group,chans))
 
-log(f"[OK] 解析频道 {len(channels)} 个")
+log(f"[OK] 分类 {len(groups)} 组")
 
 try:
     with open(out_file,"w",encoding="utf-8") as f:
         f.write("#EXTM3U\n")
-        for ch in channels:
-            for src in data:
-                f.write(f"#EXTINF:-1,{ch}\n{src}\n")
-    log(f"[DONE] live.m3u 已生成，共 {len(channels)} 个频道 × {len(data)} 条源")
+        for group,chans in groups:
+            for ch in chans:
+                for src in data:
+                    f.write(f'#EXTINF:-1 group-title="{group}",{ch}\n{src}\n')
+    log("[DONE] live.m3u 已生成")
 except Exception as e:
     log(f"[ERR] 写入 live.m3u 失败: {e}")
     sys.exit(1)
