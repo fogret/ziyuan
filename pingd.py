@@ -15,6 +15,13 @@ def load_local(path,name):
     with open(path,"r",encoding="utf-8") as f:
         return [i.strip() for i in f if i.strip()]
 
+# 清洗频道名：去掉 emoji、符号、分类、标点
+def clean(text):
+    text = re.sub(r"[^\w\u4e00-\u9fa5]+", " ", text)  # 去掉 emoji 和符号
+    parts = text.split()
+    # 最后一个通常是频道名
+    return parts[-1] if parts else ""
+
 # 解析 m3u：提取频道名 + 播放地址
 def parse_m3u(url):
     try:
@@ -32,7 +39,7 @@ def parse_m3u(url):
             if line.startswith("#EXTINF"):
                 m=re.search(r",(.+)$",line)
                 if m:
-                    name=m.group(1).strip()
+                    name=clean(m.group(1).strip())
             elif line.startswith("http"):
                 if name:
                     result.append((name,line))
@@ -57,11 +64,9 @@ media_ext = (".mp3",".flac",".m4a",".aac",".wav",".ogg",
 
 for src in raw_data:
 
-    # data.txt 里的 m3u → 解析里面的真实播放地址
     if src.endswith(".m3u"):
         all_sources.extend(parse_m3u(src))
 
-    # 其他格式 → 直接加入（频道名未知）
     elif src.endswith(media_ext):
         all_sources.append((None,src))
 
@@ -70,8 +75,10 @@ for src in raw_data:
 
 log(f"[OK] 总共解析频道源 {len(all_sources)} 条")
 
-# pingd.txt 现在只包含频道名
-channels = load_local(pingd_file,"pingd.txt")
+# 解析 pingd.txt（智能提取频道名）
+raw_channels = load_local(pingd_file,"pingd.txt")
+channels = [clean(line) for line in raw_channels if clean(line)]
+
 log(f"[OK] 频道数量 {len(channels)}")
 
 # 输出
@@ -82,18 +89,18 @@ with open(out_file,"w",encoding="utf-8") as f:
 
         matched=[]
 
-        # 1. 匹配 m3u 解析出来的频道名
+        # 匹配 m3u 解析出来的频道名
         for name,url in all_sources:
             if name and ch in name:
                 matched.append(url)
 
-        # 2. 匹配 mp4/mp3/flac 等 URL（按频道名模糊匹配 URL）
+        # 匹配 mp4/mp3/flac 等 URL（按频道名模糊匹配 URL）
         for name,url in all_sources:
             if name is None and ch in url:
                 matched.append(url)
 
         if not matched:
-            log(f"[MISS] 未找到频道: {ch}")
+            log(f"[MISS] 未找到频道: " + ch)
             continue
 
         for url in matched:
