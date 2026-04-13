@@ -1,29 +1,39 @@
-name: ping
+name: pingd
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "ping.py"
-      - "data.txt"
-      - "pingd.txt"
 
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - run: python ping.py
-      - run: |
+
+      - name: find pingd.py
+        id: findfile
+        run: |
+          f=$(find . -maxdepth 3 -name "pingd.py" | head -n 1)
+          if [ -z "$f" ]; then
+            echo "pingd.py not found"
+            exit 1
+          fi
+          echo "path=$f" >> $GITHUB_OUTPUT
+          echo "found pingd.py at: $f"
+
+      - name: run pingd.py
+        run: python "${{ steps.findfile.outputs.path }}"
+
+      - name: commit live.m3u
+        run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add live.m3u
           git commit -m "update live.m3u" || echo "no changes"
           git push
+
       - uses: actions/upload-artifact@v4
         with:
           name: live
