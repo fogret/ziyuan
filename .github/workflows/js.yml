@@ -17,4 +17,4 @@ jobs:
           python-version: '3.10'
 
       - name: Run count script
-        run: python count_url.py
+        run: python js.py
