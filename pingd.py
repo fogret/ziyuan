@@ -12,13 +12,37 @@ def load_local(path):
     with open(path,"r",encoding="utf-8") as f:
         return [i.strip() for i in f if i.strip()]
 
-# 清洗频道名（适配你 pingd.txt 的复杂格式）
-def clean_name(text):
-    text = re.sub(r"[^\w\u4e00-\u9fa5]+", " ", text)
-    parts = text.split()
-    return parts[-1] if parts else ""
+# -----------------------------
+# 把 pingd.txt 横向名称拆成竖向名称
+# -----------------------------
+def parse_pingd(lines):
+    names = []
+    for line in lines:
+        # 去掉 emoji、冒号等
+        clean = re.sub(r"[^\w\u4e00-\u9fa5,， ]+", " ", line)
 
+        # 按逗号分割
+        parts = re.split(r"[，,]+", clean)
+
+        for p in parts:
+            p = p.strip()
+            if not p:
+                continue
+            names.append(p)
+
+    # 去重保持顺序
+    seen = set()
+    ordered = []
+    for n in names:
+        if n not in seen:
+            seen.add(n)
+            ordered.append(n)
+
+    return ordered
+
+# -----------------------------
 # 解析 m3u 文件
+# -----------------------------
 def parse_m3u(url):
     try:
         r=requests.get(url,timeout=10)
@@ -34,7 +58,7 @@ def parse_m3u(url):
             if line.startswith("#EXTINF"):
                 m=re.search(r",(.+)$",line)
                 if m:
-                    name=clean_name(m.group(1).strip())
+                    name=m.group(1).strip()
             elif line.startswith("http"):
                 if name:
                     result.append((name,line))
@@ -45,19 +69,22 @@ def parse_m3u(url):
     except:
         return []
 
-# 从 URL 推断频道名（mp4/m3u8）
+# -----------------------------
+# 从 URL 推断名称（mp4/m3u8）
+# -----------------------------
 def guess_name(url):
     base=os.path.basename(url)
     base=re.sub(r"\.\w+$","",base)
-    base=re.sub(r"[^\w\u4e00-\u9fa5]+"," ",base)
     return base.strip()
 
+# -----------------------------
+# 主流程
+# -----------------------------
 log("开始解析 data.txt")
 
 raw_data=load_local(data_file)
 
-# 所有频道源：{频道名: [url1,url2]}
-sources={}
+sources={}  # {名称: [url1,url2]}
 
 for src in raw_data:
 
@@ -73,38 +100,25 @@ for src in raw_data:
 
 log(f"解析到频道数量：{len(sources)}")
 
-# 解析 pingd.txt（自动适配你的格式）
+# -----------------------------
+# 解析 pingd.txt（横向拆竖向）
+# -----------------------------
 raw_pingd=load_local(pingd_file)
-pingd_channels=[]
+pingd_names=parse_pingd(raw_pingd)
 
-for line in raw_pingd:
-    line=re.sub(r"[^\w\u4e00-\u9fa5,，、 ]+"," ",line)
-    parts=re.split(r"[ ,，、]+",line)
-    for p in parts:
-        p=p.strip()
-        if not p:
-            continue
-        pingd_channels.append(p)
+log(f"pingd.txt 名称数量：{len(pingd_names)}")
 
-# 去重保持顺序
-seen=set()
-ordered=[]
-for c in pingd_channels:
-    if c not in seen:
-        seen.add(c)
-        ordered.append(c)
-
-log(f"pingd.txt 频道数量：{len(ordered)}")
-
+# -----------------------------
 # 输出 m3u
+# -----------------------------
 with open(out_file,"w",encoding="utf-8") as f:
     f.write("#EXTM3U\n")
 
-    for ch in ordered:
-        if ch in sources:
-            for url in sources[ch]:
-                f.write(f"#EXTINF:-1,{ch}\n{url}\n")
+    for name in pingd_names:
+        if name in sources:
+            for url in sources[name]:
+                f.write(f"#EXTINF:-1,{name}\n{url}\n")
         else:
-            log(f"[MISS] 未找到频道：{ch}")
+            log(f"[MISS] 未找到名称：{name}")
 
 log("live.m3u 生成完成")
