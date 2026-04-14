@@ -27,8 +27,12 @@ for name in names:
         clusters.append([name])
 
 def auto_title(group):
+    if not group:
+        return "未分类"
     text="".join(group)
     words=re.findall(r"[\u4e00-\u9fa5A-Za-z0-9]+",text)
+    if not words:
+        return "分类"
     freq={}
     for w in words:
         freq[w]=freq.get(w,0)+1
@@ -39,6 +43,9 @@ max_len=80
 rows=[]
 
 for group in clusters:
+    if not group:
+        continue
+
     title=auto_title(group)
     rows.append(title)
 
