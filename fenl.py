@@ -48,7 +48,9 @@ for line in lines:
         if not matched:
             groups["其他"].append(name)
 
+max_len=80
 rows=[]
+
 for g,names in groups.items():
     seen=set()
     ordered=[]
@@ -56,8 +58,22 @@ for g,names in groups.items():
         if n not in seen:
             seen.add(n)
             ordered.append(n)
-    if ordered:
-        rows.append(g+","+",".join(ordered))
+
+    if not ordered:
+        continue
+
+    rows.append(g)
+
+    current=""
+    for name in ordered:
+        item=name+","
+        if len(current)+len(item)>max_len:
+            rows.append(current.rstrip(","))
+            current=item
+        else:
+            current+=item
+    if current:
+        rows.append(current.rstrip(","))
 
 with open(fenl_file,"w",encoding="utf-8") as f:
     for r in rows:
