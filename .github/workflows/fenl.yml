@@ -16,8 +16,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run fenl.py (生成 fenl.txt)
-        run: python3 fenl.py
+      - name: Run fen.py (生成 fenl.txt)
+        run: python3 fen.py
 
       - name: Commit and Push fenl.txt
         run: |
