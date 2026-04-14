@@ -1,7 +1,7 @@
 import os,re
 
 root=os.path.dirname(os.path.abspath(__file__))
-ping_file=os.path.join(root,"ping.txt")
+ping_file=os.path.join(root,"pingd.txt")
 fenl_file=os.path.join(root,"fenl.txt")
 
 def load_local(path):
