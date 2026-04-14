@@ -1,6 +1,5 @@
 import os,re
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.cluster import KMeans
+from difflib import SequenceMatcher
 
 root=os.path.dirname(os.path.abspath(__file__))
 ping_file=os.path.join(root,"pingd.txt")
@@ -12,22 +11,24 @@ def load_local(path):
 
 names=load_local(ping_file)
 
-vectorizer=TfidfVectorizer(token_pattern=r"(?u)\b\w+\b")
-X=vectorizer.fit_transform(names)
+def sim(a,b):
+    return SequenceMatcher(None,a,b).ratio()
 
-k=max(3,min(12,len(names)//5))
-model=KMeans(n_clusters=k,random_state=0,n_init="auto").fit(X)
-labels=model.labels_
+clusters=[]
 
-clusters={}
-for name,label in zip(names,labels):
-    clusters.setdefault(label,[]).append(name)
+for name in names:
+    placed=False
+    for group in clusters:
+        if sim(name,group[0])>0.35:
+            group.append(name)
+            placed=True
+            break
+    if not placed:
+        clusters.append([name])
 
 def auto_title(group):
-    text=" ".join(group)
+    text="".join(group)
     words=re.findall(r"[\u4e00-\u9fa5A-Za-z0-9]+",text)
-    if not words:
-        return "分类"
     freq={}
     for w in words:
         freq[w]=freq.get(w,0)+1
@@ -37,7 +38,7 @@ def auto_title(group):
 max_len=80
 rows=[]
 
-for label,group in clusters.items():
+for group in clusters:
     title=auto_title(group)
     rows.append(title)
 
