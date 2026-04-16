@@ -27,18 +27,28 @@ def get_forks(page):
 def get_recent_commits(user, repo, branch):
     url = f"https://api.github.com/repos/{user}/{repo}/commits?sha={branch}&per_page=20"
     r = requests.get(url, headers=HEADERS, timeout=10)
+
     if r.status_code != 200:
-        return []
+        log(f"  ⚠ GitHub API 错误：HTTP {r.status_code}")
+        return 0
 
-    commits = r.json()
+    data = r.json()
+
+    if isinstance(data, dict):
+        log(f"  ⚠ GitHub 返回错误：{data.get('message')}")
+        return 0
+
     cutoff = datetime.utcnow() - timedelta(days=7)
-
     count = 0
-    for c in commits:
-        date = c["commit"]["committer"]["date"]
-        dt = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
-        if dt >= cutoff:
-            count += 1
+
+    for c in data:
+        try:
+            date = c["commit"]["committer"]["date"]
+            dt = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+            if dt >= cutoff:
+                count += 1
+        except:
+            continue
 
     return count
 
