@@ -1,53 +1,61 @@
-import re
 import requests
+import re
 
-headers = {
-    "User-Agent": "Mozilla/5.0"
-}
+OWNER = "Guovin"
+REPO = "iptv-api"
 
-def count_inner(url):
+def get_branches():
+    url = f"https://api.github.com/repos/{OWNER}/{REPO}/branches"
+    r = requests.get(url, timeout=10)
+    if r.status_code != 200:
+        return []
+    return [b["name"] for b in r.json()]
+
+def fetch_subscribe(branch):
+    raw_url = f"https://raw.githubusercontent.com/{OWNER}/{REPO}/{branch}/source/config/subscribe.txt"
     try:
-        r = requests.get(url, timeout=10, headers=headers)
-        r.raise_for_status()
-        lines = r.text.splitlines()
-        num = 0
-        for line in lines:
-            l = line.strip()
-            if l and not l.startswith('#'):
-                num += 1
-        return num
-    except Exception:
-        return 0
+        r = requests.get(raw_url, timeout=10)
+        if r.status_code == 200:
+            return r.text
+    except:
+        pass
+    return ""
+
+def extract_urls(text):
+    pattern = r'https?://[^\s]+'
+    return re.findall(pattern, text)
 
 def main():
-    filename = "data.txt"
-    pat = re.compile(r'https?://\S+')
+    branches = get_branches()
+    print("发现分支：", branches)
 
-    total_link = 0
-    total_inner = 0
+    all_urls = []
 
-    print(f"[日志] 开始读取文件：{filename}")
-
-    with open(filename, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-        print(f"[日志] 文件总行数: {len(lines)}")
-
-    for idx, line in enumerate(lines, 1):
-        line = line.strip()
-        urls = pat.findall(line)
-        if not urls:
+    for br in branches:
+        print(f"\n扫描分支：{br}")
+        content = fetch_subscribe(br)
+        if not content:
+            print("  ❌ 未找到 subscribe.txt")
             continue
 
-        total_link += len(urls)
-        inner_sum = sum(count_inner(u) for u in urls)
-        total_inner += inner_sum
+        urls = extract_urls(content)
+        if urls:
+            print(f"  ✔ 找到 {len(urls)} 个地址")
+            all_urls.extend(urls)
+        else:
+            print("  ⚠ subscribe.txt 中没有 URL")
 
-        print(f"[日志] 第 {idx} 行 → 链接数:{len(urls)} 个, 内部播放地址:{inner_sum} 个")
+    # 去重（保持顺序）
+    all_urls = list(dict.fromkeys(all_urls))
 
-    print("\n========================================")
-    print(f"[最终统计] 外部链接总数: {total_link} 个")
-    print(f"[最终统计] 内部播放地址总数: {total_inner} 个")
-    print("========================================")
+    print("\n=== 去重后的总订阅地址 ===")
+    for u in all_urls:
+        print(u)
+
+    with open("all_subscribe_urls.txt", "w", encoding="utf-8") as f:
+        f.write("\n".join(all_urls))
+
+    print("\n已保存到 all_subscribe_urls.txt")
 
 if __name__ == "__main__":
     main()
