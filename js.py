@@ -2,6 +2,7 @@ import requests
 import re
 import sys
 import time
+import os
 
 def log(msg):
     ts = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -9,12 +10,15 @@ def log(msg):
     sys.stdout.flush()
 
 OWNER = "Guovin"
-REPO = "iptv-api"   # ← 你确认的仓库
+REPO = "iptv-api"
+
+TOKEN = os.getenv("GH_TOKEN")
+HEADERS = {"Authorization": f"Bearer {TOKEN}"} if TOKEN else {}
 
 def get_branches():
     log("正在获取所有分支...")
     url = f"https://api.github.com/repos/{OWNER}/{REPO}/branches"
-    r = requests.get(url, timeout=10)
+    r = requests.get(url, headers=HEADERS, timeout=10)
     if r.status_code != 200:
         log(f"❌ 获取分支失败，HTTP {r.status_code}")
         return []
@@ -23,11 +27,10 @@ def get_branches():
     return branches
 
 def fetch_subscribe(branch):
-    # ← 你确认的真实路径：config/subscribe.txt
     raw_url = f"https://raw.githubusercontent.com/{OWNER}/{REPO}/{branch}/config/subscribe.txt"
     log(f"  → 尝试读取：{raw_url}")
     try:
-        r = requests.get(raw_url, timeout=10)
+        r = requests.get(raw_url, headers=HEADERS, timeout=10)
         if r.status_code == 200:
             log("    ✔ 找到 subscribe.txt")
             return r.text
