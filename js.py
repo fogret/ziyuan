@@ -3,25 +3,14 @@ import re
 import sys
 import time
 
-# =========================
-# 日志系统（最终版）
-# =========================
 def log(msg):
     ts = time.strftime("%Y-%m-%d %H:%M:%S")
     sys.stdout.write(f"[{ts}] {msg}\n")
     sys.stdout.flush()
 
-
-# =========================
-# 配置：仓库信息
-# =========================
 OWNER = "Guovin"
-REPO = "iptv-api"
+REPO = "iptv-apifoak"   # ← 修正仓库名
 
-
-# =========================
-# 获取所有分支
-# =========================
 def get_branches():
     log("正在获取所有分支...")
     url = f"https://api.github.com/repos/{OWNER}/{REPO}/branches"
@@ -33,12 +22,9 @@ def get_branches():
     log(f"✔ 发现分支：{branches}")
     return branches
 
-
-# =========================
-# 获取 subscribe.txt
-# =========================
 def fetch_subscribe(branch):
-    raw_url = f"https://raw.githubusercontent.com/{OWNER}/{REPO}/{branch}/source/config/subscribe.txt"
+    # ← 修正路径 sourt/config/subscribe.txt
+    raw_url = f"https://raw.githubusercontent.com/{OWNER}/{REPO}/{branch}/sourt/config/subscribe.txt"
     log(f"  → 尝试读取：{raw_url}")
     try:
         r = requests.get(raw_url, timeout=10)
@@ -51,18 +37,10 @@ def fetch_subscribe(branch):
         log("    ⚠ 请求失败")
     return ""
 
-
-# =========================
-# 提取 URL
-# =========================
 def extract_urls(text):
     pattern = r'https?://[^\s]+'
     return re.findall(pattern, text)
 
-
-# =========================
-# 主流程
-# =========================
 def main():
     log("===== js.py 开始运行 =====")
 
@@ -84,18 +62,15 @@ def main():
         else:
             log("  ⚠ 未找到 URL")
 
-    # 去重
     log("\n正在去重...")
     all_urls = list(dict.fromkeys(all_urls))
     log(f"✔ 去重后剩余 {len(all_urls)} 个地址")
 
-    # 输出文件
     with open("all_subscribe_urls.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(all_urls))
 
     log("✔ 已保存到 all_subscribe_urls.txt")
     log("===== js.py 运行结束 =====")
-
 
 if __name__ == "__main__":
     main()
