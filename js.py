@@ -16,6 +16,9 @@ def log(msg):
     sys.stdout.write(f"[{ts}] {msg}\n")
     sys.stdout.flush()
 
+# -----------------------------
+# 获取 forks
+# -----------------------------
 def get_forks(page):
     url = f"https://api.github.com/repos/{OWNER}/{REPO}/forks?page={page}&per_page=100&sort=newest"
     r = requests.get(url, headers=HEADERS, timeout=10)
@@ -24,6 +27,9 @@ def get_forks(page):
         return []
     return r.json()
 
+# -----------------------------
+# 获取最近 7 天 commit 数
+# -----------------------------
 def get_recent_commits(user, repo, branch):
     url = f"https://api.github.com/repos/{user}/{repo}/commits?sha={branch}&per_page=20"
     r = requests.get(url, headers=HEADERS, timeout=10)
@@ -52,6 +58,9 @@ def get_recent_commits(user, repo, branch):
 
     return count
 
+# -----------------------------
+# 获取 subscribe.txt
+# -----------------------------
 def fetch_subscribe(user, repo, branch):
     raw_url = f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/config/subscribe.txt"
     try:
@@ -62,9 +71,27 @@ def fetch_subscribe(user, repo, branch):
         pass
     return ""
 
+# -----------------------------
+# 提取 URL
+# -----------------------------
 def extract_urls(text):
     return re.findall(r'https?://[^\s]+', text)
 
+# -----------------------------
+# 测试 URL 是否可访问
+# -----------------------------
+def test_url(url):
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code < 400:
+            return True
+    except:
+        pass
+    return False
+
+# -----------------------------
+# 主流程
+# -----------------------------
 def main():
     log("===== 开始筛选活跃 forks（7 天内 ≥ 7 次更新） =====")
 
@@ -98,17 +125,24 @@ def main():
                 continue
 
             urls = extract_urls(content)
-            if urls:
-                log(f"    ✔ 提取到 {len(urls)} 个地址")
-                all_urls.extend(urls)
-            else:
+            if not urls:
                 log("    ⚠ subscribe.txt 中无 URL")
+                continue
+
+            log(f"    ✔ 提取到 {len(urls)} 个地址，开始测试可用性...")
+
+            for u in urls:
+                if test_url(u):
+                    log(f"      ✔ 可访问：{u}")
+                    all_urls.append(u)
+                else:
+                    log(f"      ❌ 不可访问：{u}")
 
         page += 1
 
     log("\n正在去重...")
     all_urls = list(dict.fromkeys(all_urls))
-    log(f"✔ 去重后剩余 {len(all_urls)} 个地址")
+    log(f"✔ 去重后剩余 {len(all_urls)} 个可用地址")
 
     with open("active_forks_subscribe_urls.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(all_urls))
