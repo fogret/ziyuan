@@ -9,22 +9,22 @@ def log(msg):
     sys.stdout.flush()
 
 OWNER = "Guovin"
-REPO = "iptv-apifoak"   # ← 修正仓库名
+REPO = "iptv-api"   # ← 你确认的仓库
 
 def get_branches():
     log("正在获取所有分支...")
     url = f"https://api.github.com/repos/{OWNER}/{REPO}/branches"
     r = requests.get(url, timeout=10)
     if r.status_code != 200:
-        log("❌ 获取分支失败")
+        log(f"❌ 获取分支失败，HTTP {r.status_code}")
         return []
     branches = [b["name"] for b in r.json()]
     log(f"✔ 发现分支：{branches}")
     return branches
 
 def fetch_subscribe(branch):
-    # ← 修正路径 sourt/config/subscribe.txt
-    raw_url = f"https://raw.githubusercontent.com/{OWNER}/{REPO}/{branch}/sourt/config/subscribe.txt"
+    # ← 你确认的真实路径：config/subscribe.txt
+    raw_url = f"https://raw.githubusercontent.com/{OWNER}/{REPO}/{branch}/config/subscribe.txt"
     log(f"  → 尝试读取：{raw_url}")
     try:
         r = requests.get(raw_url, timeout=10)
@@ -32,9 +32,9 @@ def fetch_subscribe(branch):
             log("    ✔ 找到 subscribe.txt")
             return r.text
         else:
-            log("    ❌ 未找到")
-    except:
-        log("    ⚠ 请求失败")
+            log(f"    ❌ 未找到（HTTP {r.status_code}）")
+    except Exception as e:
+        log(f"    ⚠ 请求失败：{e}")
     return ""
 
 def extract_urls(text):
