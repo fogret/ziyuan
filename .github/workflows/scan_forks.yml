@@ -1,4 +1,4 @@
-name: Run scan_forks
+name: Update subscribe list
 
 on:
   workflow_dispatch:
@@ -17,28 +17,35 @@ jobs:
           python-version: "3.11"
 
       - name: Run scan_forks.py
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scan_forks.py
 
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Debug YONU
+      - name: Update subscribe.txt
         run: |
-          if [ -z "${{ secrets.YONU }}" ]; then
-            echo "YONU is EMPTY"
-          else
-            echo "YONU length: ${#YONU}"
-          fi
-        env:
-          YONU: ${{ secrets.YONU }}
+          cd target_repo/config
+
+          # 读取原文件
+          awk '
+            BEGIN {in_sub=0}
+            /^\[SUBSCRIBE\]/ {print; in_sub=1; next}
+            /^\[/ && $0 !~ /^\[SUBSCRIBE\]/ {in_sub=0}
+            !in_sub {print}
+            in_sub && $0 ~ /^\[SUBSCRIBE\]/ {
+              while ((getline line < "../../../urls.txt") > 0) print line
+              close("../../../urls.txt")
+              in_sub=0
+            }
+          ' subscribe.txt > subscribe.new
+
+          mv subscribe.new subscribe.txt
 
       - name: Commit & Push
         run: |
           cd target_repo
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add .
-          git commit -m "Auto update" || echo "No changes"
+          git add config/subscribe.txt
+          git commit -m "Update subscribe list" || echo "No changes"
           git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
