@@ -3,14 +3,14 @@ name: Run scan_forks
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 18 * * *"   # 北京时间每天 02:00 运行
+    - cron: "0 18 * * *"   # 北京时间 02:00
 
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout current repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -30,13 +30,41 @@ jobs:
         run: |
           python scan_forks.py
 
-      - name: Commit changes
+      # ⭐ 克隆目标仓库 fogret/sourt
+      - name: Clone target repo (fogret/sourt)
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .
-          git commit -m "来自 scan_forks.py 的自动更新" || echo "No changes"
+          git clone https://github.com/fogret/sourt target_repo
 
-      - name: Force Push
+      # ⭐ 替换订阅源列表（不动注释、不动 WHITELIST）
+      - name: Update subscribe.txt (replace subscription list only)
         run: |
-          git push -f
+          cd target_repo/config
+
+          NEW_CONTENT=$(printf "%s\n" "$(cat ../../urls.txt)")
+
+          awk -v new="$NEW_CONTENT" '
+            BEGIN {in_list=0; in_white=0}
+            /^\[WHITELIST\]/ {in_white=1; in_list=0; print; next}
+            /^#/ {print; next}
+            NF==0 && !in_white {print; next}
+
+            !in_white && !in_list {
+              print new
+              in_list=1
+              next
+            }
+
+            in_white {print; next}
+          ' subscribe.txt > subscribe_new.txt
+
+          mv subscribe_new.txt subscribe.txt
+
+      # ⭐ 提交并推送到 fogret/sourt
+      - name: Commit & Push to target repo
+        run: |
+          cd target_repo
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add config/subscribe.txt
+          git commit -m "自动更新订阅源列表" || echo "No changes"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fogret/sourt -f
