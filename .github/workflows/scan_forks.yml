@@ -1,50 +1,41 @@
-name: Run scan_forks.py
+name: Auto Update
 
 on:
-  schedule:
-    - cron: "0 18 */3 * *"
   workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"   # 每 6 小时运行一次，你可改成每天 4 点：0 20 * * *
 
 jobs:
-  run:
+  update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout current repo
-        uses: actions/checkout@v3
-
-      - name: Debug GH_TOKEN
-        run: |
-          if [ -z "${{ secrets.GH_TOKEN }}" ]; then
-            echo "❌ GH_TOKEN 未设置"
-            exit 1
-          else
-            echo "✔ GH_TOKEN 已检测到"
-          fi
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 必须为 0，否则 push 会冲突
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install dependencies
         run: |
-          pip install requests
+          pip install -r requirements.txt || true
 
-      - name: Run scan_forks.py
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Run update script
         run: |
-          python scan_forks.py
+          python scan_forks.py || true
+          python main.py || true
 
-      - name: Commit & Push results
+      - name: Commit changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add projects.txt urls.txt
-          if ! git diff --staged --quiet; then
-            git commit -m "Auto update from scan_forks.py"
-            git push
-          else
-            echo "No changes to commit."
-          fi
+          git add .
+          git commit -m "来自 scan_forks.py 的自动更新" || echo "No changes"
+
+      - name: Force Push
+        run: |
+          git push -f
