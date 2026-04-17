@@ -30,7 +30,7 @@ jobs:
         run: |
           python scan_forks.py
 
-      # ⭐ 使用 Token 克隆目标仓库（关键）
+      # ⭐ 使用 Token 克隆目标仓库
       - name: Clone target repo (fogret/sourt)
         run: |
           git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fogret/sourt target_repo
@@ -46,7 +46,7 @@ jobs:
           # 生成北京时间更新时间
           UPDATE_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
 
-          awk -v urls="$NEW_URLS" -v up="更新时间（北京时间）：'"$UPDATE_TIME"'" '
+          awk -v urls="$NEW_URLS" -v up="Update time (Beijing): $UPDATE_TIME" '
             BEGIN {in_list=0; in_white=0}
             /^\[WHITELIST\]/ {in_white=1; in_list=0; print; next}
             /^#/ {print; next}
@@ -71,5 +71,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "自动更新订阅源列表 + 更新时间" || echo "No changes"
+          git commit -m "Auto update subscription list + update time" || echo "No changes"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fogret/sourt -f
