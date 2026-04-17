@@ -3,7 +3,7 @@ name: Run scan_forks
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 16 * * *"   # 北京时间 02:00
+    - cron: "0 16 * * *"   # 北京时间 00:00
 
 jobs:
   update:
