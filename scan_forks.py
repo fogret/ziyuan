@@ -58,10 +58,13 @@ def fork_recent(fork):
 # 获取 subscribe.txt
 def fetch_subscribe(full_name):
     raw_url = f"https://raw.githubusercontent.com/{full_name}/master/config/subscribe.txt"
-    r = requests.get(raw_url, timeout=(3, 3))
-    if r.status_code != 200:
+    try:
+        r = requests.get(raw_url, timeout=(3, 3))
+        if r.status_code != 200:
+            return None
+        return r.text
+    except:
         return None
-    return r.text
 
 # 提取 URL（单文件去重）
 def extract_urls(text):
@@ -122,4 +125,28 @@ def main():
     final_urls = []
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        results = executor.map(test_url, all_urls.keys
+        results = executor.map(test_url, all_urls.keys())
+        for url, ok in zip(all_urls.keys(), results):
+            if ok:
+                final_urls.append(url)
+                log(f"[OK] {url}")
+                log_result(f"{url}    # 来自 fork：{all_urls[url]}")
+            else:
+                log(f"[FAIL] {url}")
+
+    final_urls = sorted(set(final_urls))  # 最终去重
+
+    # 写入 projects.txt
+    with open("projects.txt", "w", encoding="utf-8") as f:
+        for fk in valid_forks:
+            f.write(f"https://github.com/{fk}\n")
+
+    # 写入 urls.txt
+    with open("urls.txt", "w", encoding="utf-8") as f:
+        for u in final_urls:
+            f.write(u + "\n")
+
+    log("=== 完成！已生成 projects.txt、urls.txt、scan.log、result.log（全部去重 + 防卡死） ===")
+
+if __name__ == "__main__":
+    main()
