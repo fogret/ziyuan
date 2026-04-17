@@ -3,7 +3,7 @@ name: IPTV 扫描推送
 on:
   workflow_dispatch:  # 手动触发
   schedule:
-    - cron: '0 16 * * *'  # 北京时间 24:00 执行
+    - cron: '0 16 * * 0'  # 每周日 北京时间 24:00（周一 00:00）执行
 
 jobs:
   run-scan:
