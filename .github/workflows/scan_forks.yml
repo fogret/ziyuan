@@ -1,4 +1,4 @@
-name: Test Write Subscribe
+name: Write Subscribe From PY Output
 
 on:
   workflow_dispatch:
@@ -16,22 +16,18 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run scan_forks.py
-        run: python scan_forks.py
+      - name: Run PY and capture output
+        id: runpy
+        run: |
+          python scan_forks.py > py_output.txt
 
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Append test content to subscribe.txt
+      - name: Write PY output into subscribe.txt
         run: |
           cd target_repo/config
-
-          echo "" >> subscribe.txt
-          echo "# ===== 自动测试写入 =====" >> subscribe.txt
-          echo "# 时间：$(date '+%Y-%m-%d %H:%M:%S')" >> subscribe.txt
-          echo "# 以下是测试写入内容：" >> subscribe.txt
-          cat ../../../subscribe_block.txt >> subscribe.txt
-          echo "# ===== 测试写入结束 =====" >> subscribe.txt
+          cat ../../../py_output.txt > subscribe.txt
 
       - name: Commit & Push
         run: |
@@ -39,5 +35,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "Test write subscribe" || echo "No changes"
+          git commit -m "Update subscribe from PY output" || echo "No changes"
           git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
