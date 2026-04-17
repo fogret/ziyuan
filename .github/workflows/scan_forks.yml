@@ -1,4 +1,4 @@
-name: Write Subscribe From PY Output
+name: Write Subscribe Directly
 
 on:
   workflow_dispatch:
@@ -16,18 +16,18 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run PY and capture output
+      - name: Run PY and capture stdout
         id: runpy
         run: |
-          python scan_forks.py > py_output.txt
+          python scan_forks.py > stdout.txt
 
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Write PY output into subscribe.txt
+      - name: Write stdout into subscribe.txt
         run: |
           cd target_repo/config
-          cat ../../../py_output.txt > subscribe.txt
+          cat ../../../stdout.txt > subscribe.txt
 
       - name: Commit & Push
         run: |
@@ -35,5 +35,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "Update subscribe from PY output" || echo "No changes"
+          git commit -m "Write test line" || echo "No changes"
           git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
