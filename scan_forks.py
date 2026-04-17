@@ -22,6 +22,7 @@ cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
 
+# ★ 你要求：只要 m3u / m3u8 / txt，其它全部不要
 def is_valid_stream(url):
     url = url.lower()
 
