@@ -16,23 +16,23 @@ HEADERS = {
     "Authorization": f"Bearer {TOKEN}"
 }
 
-# 最近 7 天
 DAYS = 7
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 
-# URL 提取
 URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
+
 
 def log(msg):
     with open("scan.log", "a", encoding="utf-8") as f:
         f.write(msg + "\n")
     print(msg)
 
+
 def log_result(msg):
     with open("result.log", "a", encoding="utf-8") as f:
         f.write(msg + "\n")
 
-# 获取所有 fork
+
 def get_forks():
     forks = []
     page = 1
@@ -49,13 +49,12 @@ def get_forks():
         page += 1
     return forks
 
-# 判断 fork 是否在最近 7 天更新
+
 def fork_recent(fork):
-    date_str = fork["updated_at"]
-    update_date = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
+    update_date = datetime.strptime(fork["updated_at"], "%Y-%m-%dT%H:%M:%SZ")
     return update_date >= cutoff_date
 
-# 获取 subscribe.txt
+
 def fetch_subscribe(full_name):
     raw_url = f"https://raw.githubusercontent.com/{full_name}/master/config/subscribe.txt"
     try:
@@ -66,12 +65,12 @@ def fetch_subscribe(full_name):
     except:
         return None
 
-# 提取 URL（单文件去重）
+
 def extract_urls(text):
     urls = URL_PATTERN.findall(text)
     return list(set(u.strip() for u in urls))
 
-# 测试 URL（强制连接 + 读取超时）
+
 def test_url(url):
     try:
         r = requests.head(url, timeout=(3, 3))
@@ -87,17 +86,18 @@ def test_url(url):
     except:
         return False
 
+
 def main():
     open("scan.log", "w").close()
     open("result.log", "w").close()
 
-    log("=== 开始扫描所有 fork（防卡死 + 去重 + 极速） ===")
+    log("=== 开始扫描所有 fork ===")
 
     forks = get_forks()
     log(f"共找到 {len(forks)} 个 fork")
 
     valid_forks = []
-    all_urls = {}  # URL → 来源 fork
+    all_urls = {}
 
     for f in forks:
         full_name = f["full_name"]
@@ -115,13 +115,13 @@ def main():
             continue
 
         urls = extract_urls(content)
-        log(f"[{full_name}] 提取到 {len(urls)} 个 URL（单文件去重）")
+        log(f"[{full_name}] 提取到 {len(urls)} 个 URL")
 
         for u in urls:
-            if u not in all_urls:  # 跨 fork 去重
+            if u not in all_urls:
                 all_urls[u] = full_name
 
-    log(f"共提取到 {len(all_urls)} 个唯一 URL（跨 fork 去重），开始测速…")
+    log(f"共提取到 {len(all_urls)} 个唯一 URL，开始测速…")
 
     final_urls = []
 
@@ -141,19 +141,18 @@ def main():
             except Exception:
                 log(f"[TIMEOUT] {url}")
 
-    final_urls = sorted(set(final_urls))  # 最终去重
+    final_urls = sorted(set(final_urls))
 
-    # 写入 projects.txt
     with open("projects.txt", "w", encoding="utf-8") as f:
         for fk in valid_forks:
             f.write(f"https://github.com/{fk}\n")
 
-    # 写入 urls.txt
     with open("urls.txt", "w", encoding="utf-8") as f:
         for u in final_urls:
             f.write(u + "\n")
 
-    log("=== 完成！已生成 projects.txt、urls.txt、scan.log、result.log（稳定无卡死） ===")
+    log("=== 完成 ===")
+
 
 if __name__ == "__main__":
     main()
