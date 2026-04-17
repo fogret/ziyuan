@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run scan_forks.py (生成 projects.txt / urls.txt)
+      - name: Run scan_forks.py
         env:
           YONU: ${{ secrets.YONU }}
         run: python scan_forks.py
