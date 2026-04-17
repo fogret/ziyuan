@@ -35,7 +35,7 @@ jobs:
 
           head -n 5 subscribe.txt > new.txt
           echo "# 更新时间（北京时间）：$(date '+%Y-%m-%d %H:%M:%S')" >> new.txt
-          cat ../../../urls.txt >> new.txt
+          cat ../../urls.txt >> new.txt
           echo "" >> new.txt
           awk 'NR>=6 && /^\[WHITELIST\]/ {start=1} start' subscribe.txt >> new.txt
           mv new.txt subscribe.txt
