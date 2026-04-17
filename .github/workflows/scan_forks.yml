@@ -1,9 +1,9 @@
-name: Auto Update
+name: Run scan_forks
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"   # 每 6 小时运行一次，你可改成每天 4 点：0 20 * * *
+    - cron: "0 18 * * *"   # 北京时间每天 02:00 运行
 
 jobs:
   update:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # 必须为 0，否则 push 会冲突
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -22,12 +22,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt || true
+          pip install requests
 
-      - name: Run update script
+      - name: Run scan_forks.py
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scan_forks.py || true
-          python main.py || true
+          python scan_forks.py
 
       - name: Commit changes
         run: |
