@@ -1,36 +1,45 @@
 import requests
 import re
 import time
+import os
 import concurrent.futures
 from datetime import datetime, timedelta
 
+# 仓库信息
 OWNER = "Guovin"
 REPO = "iptv-api"
+
+# GitHub API
 API = "https://api.github.com"
+
+# 从环境变量读取 Token（workflow 会注入 secrets.YONU）
+TOKEN = os.getenv("YONU")
+
 HEADERS = {
     "Accept": "application/vnd.github+json",
-    "User-Agent": "iptv-speed-scan"
+    "User-Agent": "iptv-speed-scan",
+    "Authorization": f"Bearer {TOKEN}"
 }
 
 # 最近 7 天
 DAYS = 7
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 
-URL_PATTERN = re.compile(r'https?://[^\s"]+')
+# 完整 URL 提取（不漏、不截断）
+URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
+# 日志函数
 def log(msg):
-    """写入扫描日志"""
     with open("scan.log", "a", encoding="utf-8") as f:
         f.write(msg + "\n")
     print(msg)
 
 def log_result(msg):
-    """写入结果日志"""
     with open("result.log", "a", encoding="utf-8") as f:
         f.write(msg + "\n")
 
+# 获取所有分支
 def get_branches():
-    """获取所有分支"""
     url = f"{API}/repos/{OWNER}/{REPO}/branches?per_page=200"
     r = requests.get(url, headers=HEADERS)
     if r.status_code != 200:
@@ -38,8 +47,8 @@ def get_branches():
         return []
     return r.json()
 
+# 判断分支是否在最近 7 天更新
 def branch_recent(branch):
-    """判断分支是否在最近 7 天内更新"""
     commit = branch["commit"]["sha"]
     url = f"{API}/repos/{OWNER}/{REPO}/commits/{commit}"
     r = requests.get(url, headers=HEADERS)
@@ -52,8 +61,8 @@ def branch_recent(branch):
 
     return commit_date >= cutoff_date
 
+# 获取 subscribe.txt
 def fetch_subscribe(branch_name):
-    """获取 subscribe.txt 内容"""
     raw_url = f"https://raw.githubusercontent.com/{OWNER}/{REPO}/{branch_name}/config/subscribe.txt"
     r = requests.get(raw_url)
     if r.status_code != 200:
@@ -62,13 +71,13 @@ def fetch_subscribe(branch_name):
     log(f"[{branch_name}] 成功获取 subscribe.txt")
     return r.text
 
+# 提取 URL
 def extract_urls(text):
-    """提取 URL（完整提取，不漏）"""
     urls = URL_PATTERN.findall(text)
     return [u.strip() for u in urls]
 
+# 测试 URL（HEAD → GET 双保险）
 def test_url(url):
-    """测试 URL 是否可访问（HEAD → GET 双保险）"""
     try:
         r = requests.head(url, timeout=4)
         if r.status_code == 200:
@@ -82,6 +91,7 @@ def test_url(url):
     except:
         return False
 
+# 主程序
 def main():
     # 清空日志
     open("scan.log", "w").close()
