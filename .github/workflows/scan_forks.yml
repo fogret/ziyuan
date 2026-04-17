@@ -2,8 +2,6 @@ name: Run scan_forks
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 16 * * *"   # Beijing 00:00
 
 jobs:
   update:
@@ -12,68 +10,35 @@ jobs:
     steps:
       - name: Checkout current repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          pip install requests
-
       - name: Run scan_forks.py
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scan_forks.py
+
+      - name: Clone target repo
+        run: git clone https://github.com/fogret/sourt target_repo
+
+      - name: Debug YONU
         run: |
-          python scan_forks.py
-
-      - name: Clone target repo (fogret/sourt)
-        run: |
-          git clone https://github.com/fogret/sourt target_repo
-
-      - name: Update subscribe.txt
-        run: |
-          cd target_repo/config
-
-          NEW_URLS=$(printf "%s\n" "$(cat ../../urls.txt)")
-          UPDATE_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
-
-          awk -v urls="$NEW_URLS" -v up="Update time (Beijing): $UPDATE_TIME" '
-            BEGIN {in_list=0; in_white=0}
-            /^\[WHITELIST\]/ {in_white=1; in_list=0; print; next}
-            /^#/ {print; next}
-            NF==0 && !in_white {print; next}
-
-            !in_white && !in_list {
-              print "# " up
-              print urls
-              in_list=1
-              next
-            }
-
-            in_white {print; next}
-          ' subscribe.txt > subscribe_new.txt
-
-          mv subscribe_new.txt subscribe.txt
-
-      - name: Debug PAT
-        run: |
-          if [ -z "${{ secrets.PAT_TOKEN }}" ]; then
-            echo "PAT_TOKEN is EMPTY"
+          if [ -z "${{ secrets.YONU }}" ]; then
+            echo "YONU is EMPTY"
           else
-            echo "PAT_TOKEN length: ${#PAT_TOKEN}"
+            echo "YONU length: ${#YONU}"
           fi
         env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+          YONU: ${{ secrets.YONU }}
 
-      - name: Commit & Push to target repo
+      - name: Commit & Push
         run: |
           cd target_repo
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add config/subscribe.txt
-          git commit -m "Auto update subscription list + update time" || echo "No changes"
-          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/fogret/sourt -f
+          git add .
+          git commit -m "Auto update" || echo "No changes"
+          git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
