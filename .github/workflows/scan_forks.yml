@@ -1,4 +1,4 @@
-name: Direct Write Subscribe
+name: Replace Speedtest Block
 
 on:
   workflow_dispatch:
@@ -16,12 +16,36 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Run PY and capture output
+        run: python scan_forks.py > result.txt
+
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Run PY and write directly into subscribe.txt
+      - name: Replace block starting from 自动测速结果（测试版）
         run: |
-          python scan_forks.py > target_repo/config/subscribe.txt
+          cd target_repo/config
+
+          awk '
+            BEGIN {in_block=0}
+            /^# 自动测速结果（测试版）/ {
+              # 从这里开始覆盖，包括这一行
+              print "# 自动测速结果（测试版）"
+              print "# 时间： " strftime("%Y-%m-%d %H:%M:%S", systime()+8*3600)
+              while ((getline line < "../../../result.txt") > 0) print line
+              in_block=1
+              next
+            }
+            /^\[WHITELIST\]/ {
+              # 到这里结束覆盖
+              in_block=0
+              print "[WHITELIST]"
+              next
+            }
+            !in_block {print}
+          ' subscribe.txt > new_subscribe.txt
+
+          mv new_subscribe.txt subscribe.txt
 
       - name: Commit & Push
         run: |
@@ -29,5 +53,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "Direct write test" || echo "No changes"
+          git commit -m "Replace speedtest block" || echo "No changes"
           git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
