@@ -3,7 +3,7 @@ name: Run scan_forks
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 16 * * *"   # 北京时间 00:00
+    - cron: "0 16 * * *"   # Beijing 00:00
 
 jobs:
   update:
@@ -30,20 +30,20 @@ jobs:
         run: |
           python scan_forks.py
 
-      # ⭐ 使用 Token 克隆目标仓库
+      # Clone target repo
       - name: Clone target repo (fogret/sourt)
         run: |
           git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fogret/sourt target_repo
 
-      # ⭐ 替换订阅源列表 + 写入更新时间（不动注释、不动 WHITELIST）
+      # Update subscribe.txt
       - name: Update subscribe.txt (replace subscription list only + add update time)
         run: |
           cd target_repo/config
 
-          # 读取 urls.txt 内容
+          # Read urls.txt
           NEW_URLS=$(printf "%s\n" "$(cat ../../urls.txt)")
 
-          # 生成北京时间更新时间
+          # Generate update time (Beijing)
           UPDATE_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
 
           awk -v urls="$NEW_URLS" -v up="Update time (Beijing): $UPDATE_TIME" '
@@ -64,7 +64,7 @@ jobs:
 
           mv subscribe_new.txt subscribe.txt
 
-      # ⭐ 提交并推送到 fogret/sourt
+      # Commit & Push
       - name: Commit & Push to target repo
         run: |
           cd target_repo
