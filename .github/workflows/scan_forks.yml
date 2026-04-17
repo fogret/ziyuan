@@ -2,7 +2,7 @@ name: Run scan_forks.py
 
 on:
   schedule:
-    - cron: "0 18 */3 * *"   # 每 3 天一次，北京时间 02:00
+    - cron: "0 18 */3 * *"
   workflow_dispatch:
 
 jobs:
@@ -12,6 +12,15 @@ jobs:
     steps:
       - name: Checkout current repo
         uses: actions/checkout@v3
+
+      - name: Debug GH_TOKEN
+        run: |
+          if [ -z "${{ secrets.GH_TOKEN }}" ]; then
+            echo "❌ GH_TOKEN 未设置"
+            exit 1
+          else
+            echo "✔ GH_TOKEN 已检测到"
+          fi
 
       - name: Checkout sourt repo
         uses: actions/checkout@v3
