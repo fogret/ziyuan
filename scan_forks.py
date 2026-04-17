@@ -1,15 +1,7 @@
-import requests
-import re
 import sys
 import time
+from datetime import datetime
 import os
-from datetime import datetime, timedelta
-
-OWNER = "Guovin"
-REPO = "iptv-api"
-
-TOKEN = os.getenv("GH_TOKEN")
-HEADERS = {"Authorization": f"Bearer {TOKEN}"} if TOKEN else {}
 
 def beijing_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() + 8*3600))
@@ -19,138 +11,26 @@ def log(msg):
     sys.stdout.write(f"[{ts}] {msg}\n")
     sys.stdout.flush()
 
-def get_forks(page):
-    url = f"https://api.github.com/repos/{OWNER}/{REPO}/forks?page={page}&per_page=100&sort=newest"
-    r = requests.get(url, headers=HEADERS, timeout=10)
-    if r.status_code != 200:
-        log(f"❌ 获取 forks 失败：HTTP {r.status_code}")
-        return []
-    return r.json()
-
-def get_recent_commits(user, repo, branch):
-    url = f"https://api.github.com/repos/{user}/{repo}/commits?sha={branch}&per_page=20"
-    r = requests.get(url, headers=HEADERS, timeout=10)
-
-    if r.status_code != 200:
-        log(f"  ⚠ GitHub API 错误：HTTP {r.status_code}")
-        return 0
-
-    data = r.json()
-    if isinstance(data, dict):
-        log(f"  ⚠ GitHub 返回错误：{data.get('message')}")
-        return 0
-
-    cutoff = datetime.utcnow() - timedelta(days=7)
-    count = 0
-
-    for c in data:
-        try:
-            date = c["commit"]["committer"]["date"]
-            dt = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
-            if dt >= cutoff:
-                count += 1
-        except:
-            continue
-
-    return count
-
-def fetch_subscribe(user, repo, branch):
-    raw_url = f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/config/subscribe.txt"
-    try:
-        r = requests.get(raw_url, headers=HEADERS, timeout=10)
-        if r.status_code == 200:
-            return r.text
-    except:
-        pass
-    return ""
-
-def extract_urls(text):
-    return re.findall(r'https?://[^\s]+', text)
-
-def test_url(url):
-    try:
-        r = requests.get(url, timeout=5)
-        if r.status_code < 400:
-            return True
-    except:
-        pass
-    return False
-
 def main():
-    log("===== 开始筛选活跃 forks（7 天内 ≥ 7 次更新） =====")
+    log("===== 测试模式：不扫描 forks，只输出固定 URL =====")
     log(f"北京时间：{beijing_time()}")
 
-    all_urls = []
-    active_projects = []
-    page = 1
-
-    # ⭐ 输出到当前仓库根目录
     PROJECTS_PATH = "projects.txt"
     URLS_PATH = "urls.txt"
 
-    while True:
-        forks = get_forks(page)
-        if not forks:
-            break
-
-        for f in forks:
-            full = f["full_name"]
-            user, repo = full.split("/")
-            branch = f["default_branch"]
-
-            log(f"\n检查 fork：{full}（分支：{branch}）")
-
-            commit_count = get_recent_commits(user, repo, branch)
-            log(f"  → 最近 7 天 commit 数：{commit_count}")
-
-            if commit_count < 7:
-                log("  ❌ 不满足条件，跳过")
-                continue
-
-            log("  ✔ 满足条件，读取 subscribe.txt")
-
-            active_projects.append(f"https://github.com/{user}/{repo}")
-
-            content = fetch_subscribe(user, repo, branch)
-            if not content:
-                log("    ❌ 未找到 subscribe.txt")
-                continue
-
-            urls = extract_urls(content)
-            if not urls:
-                log("    ⚠ subscribe.txt 中无 URL")
-                continue
-
-            log(f"    ✔ 提取到 {len(urls)} 个地址，开始测试可用性...")
-
-            for u in urls:
-                if test_url(u):
-                    log(f"      ✔ 可访问：{u}")
-                    all_urls.append(u)
-                else:
-                    log(f"      ❌ 不可访问：{u}")
-
-        page += 1
-
-    log("\n正在去重...")
-    all_urls = list(dict.fromkeys(all_urls))
-    active_projects = list(dict.fromkeys(active_projects))
-    log(f"✔ 去重后剩余 {len(all_urls)} 个可用地址")
-    log(f"✔ 活跃项目：{len(active_projects)} 个")
-
-    # ⭐ 写项目地址文件
+    # ⭐ 写项目地址文件（随便写一条）
     with open(PROJECTS_PATH, "w", encoding="utf-8") as f:
         f.write(f"# 更新时间（北京时间）：{beijing_time()}\n")
-        f.write("\n".join(active_projects))
+        f.write("https://github.com/fogret/test-project\n")
 
-    # ⭐ 写 URL 文件
+    # ⭐ 写 URL 文件（只写一条固定可访问的 URL）
     with open(URLS_PATH, "w", encoding="utf-8") as f:
         f.write(f"# 更新时间（北京时间）：{beijing_time()}\n")
-        f.write("\n".join(all_urls))
+        f.write("https://www.baidu.com\n")
 
     log(f"✔ 已保存 {PROJECTS_PATH}")
     log(f"✔ 已保存 {URLS_PATH}")
-    log("===== 扫描完成 =====")
+    log("===== 测试模式：已写入固定 URL =====")
 
 if __name__ == "__main__":
     main()
