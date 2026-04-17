@@ -2,7 +2,7 @@ name: Run scan_forks.py
 
 on:
   schedule:
-    - cron: "0 18 */3 * *"
+    - cron: "0 18 */3 * *"   # 每 3 天一次，北京时间 02:00
   workflow_dispatch:
 
 jobs:
@@ -22,13 +22,6 @@ jobs:
             echo "✔ GH_TOKEN 已检测到"
           fi
 
-      - name: Checkout sourt repo
-        uses: actions/checkout@v3
-        with:
-          repository: fogret/sourt
-          path: sourt
-          token: ${{ secrets.GH_TOKEN }}
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -44,13 +37,14 @@ jobs:
         run: |
           python utils/scan_forks.py
 
-      - name: Commit & Push to sourt repo
+      - name: Commit & Push results
         run: |
-          cd sourt
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add output/projects.txt output/urls.txt
+          git add projects.txt urls.txt
           if ! git diff --staged --quiet; then
             git commit -m "Auto update from scan_forks.py"
             git push
+          else
+            echo "No changes to commit."
           fi
