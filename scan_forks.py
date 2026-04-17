@@ -11,8 +11,12 @@ REPO = "iptv-api"
 TOKEN = os.getenv("GH_TOKEN")
 HEADERS = {"Authorization": f"Bearer {TOKEN}"} if TOKEN else {}
 
+def beijing_time():
+    """返回北京时间（UTC+8）"""
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() + 8*3600))
+
 def log(msg):
-    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    ts = beijing_time()
     sys.stdout.write(f"[{ts}] {msg}\n")
     sys.stdout.flush()
 
@@ -94,9 +98,15 @@ def test_url(url):
 # -----------------------------
 def main():
     log("===== 开始筛选活跃 forks（7 天内 ≥ 7 次更新） =====")
+    log(f"北京时间：{beijing_time()}")
 
     all_urls = []
+    active_projects = []
     page = 1
+
+    # ⭐ 输出到 sourt 仓库
+    PROJECTS_PATH = "/home/runner/work/sourt/sourt/output/projects.txt"
+    URLS_PATH = "/home/runner/work/sourt/sourt/output/urls.txt"
 
     while True:
         forks = get_forks(page)
@@ -118,6 +128,8 @@ def main():
                 continue
 
             log("  ✔ 满足条件，读取 subscribe.txt")
+
+            active_projects.append(f"https://github.com/{user}/{repo}")
 
             content = fetch_subscribe(user, repo, branch)
             if not content:
@@ -142,12 +154,22 @@ def main():
 
     log("\n正在去重...")
     all_urls = list(dict.fromkeys(all_urls))
+    active_projects = list(dict.fromkeys(active_projects))
     log(f"✔ 去重后剩余 {len(all_urls)} 个可用地址")
+    log(f"✔ 活跃项目：{len(active_projects)} 个")
 
-    with open("active_forks_subscribe_urls.txt", "w", encoding="utf-8") as f:
+    # ⭐ 写项目地址文件
+    with open(PROJECTS_PATH, "w", encoding="utf-8") as f:
+        f.write(f"# 更新时间（北京时间）：{beijing_time()}\n")
+        f.write("\n".join(active_projects))
+
+    # ⭐ 写 URL 文件
+    with open(URLS_PATH, "w", encoding="utf-8") as f:
+        f.write(f"# 更新时间（北京时间）：{beijing_time()}\n")
         f.write("\n".join(all_urls))
 
-    log("✔ 已保存到 active_forks_subscribe_urls.txt")
+    log(f"✔ 已保存 {PROJECTS_PATH}")
+    log(f"✔ 已保存 {URLS_PATH}")
     log("===== 扫描完成 =====")
 
 if __name__ == "__main__":
