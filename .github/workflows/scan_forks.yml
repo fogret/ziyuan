@@ -21,15 +21,20 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run scan_forks.py
+      - name: Run scan_forks.py (生成 projects.txt / urls.txt)
         env:
           YONU: ${{ secrets.YONU }}
         run: python scan_forks.py
 
+      # ★ 你要求：紫苑仓库必须能正常推送，不强推
+      # ★ 我只在原逻辑上增加同步，不改其它任何东西
       - name: Commit generated files back to 紫苑
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
+
+          git pull --rebase
+
           git add projects.txt urls.txt
           git commit -m "Update local projects.txt and urls.txt" || echo "No changes"
           git push
@@ -41,11 +46,21 @@ jobs:
         run: |
           cd target_repo/config
 
+          # 保留前 5 行
           head -n 5 subscribe.txt > new.txt
+
+          # ★ 你要求：必须是北京时间
           echo "# 更新时间（北京时间）：$(date -u -d '+8 hour' '+%Y-%m-%d %H:%M:%S')" >> new.txt
+
+          # 加入 urls.txt
           cat ../../urls.txt >> new.txt
+
+          # ★ 你要求：必须加一个空行
           echo "" >> new.txt
+
+          # 保留 WHITELIST 及以下
           awk 'NR>=6 && /^\[WHITELIST\]/ {start=1} start' subscribe.txt >> new.txt
+
           mv new.txt subscribe.txt
 
       - name: Commit & Push to sourt
