@@ -33,7 +33,7 @@ jobs:
       # Clone target repo
       - name: Clone target repo (fogret/sourt)
         run: |
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fogret/sourt target_repo
+          git clone https://github.com/fogret/sourt target_repo
 
       # Update subscribe.txt
       - name: Update subscribe.txt (replace subscription list only + add update time)
@@ -72,4 +72,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
           git commit -m "Auto update subscription list + update time" || echo "No changes"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fogret/sourt -f
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/fogret/sourt -f
