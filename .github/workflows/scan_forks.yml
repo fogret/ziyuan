@@ -19,15 +19,15 @@ jobs:
       - name: Run PY and capture stdout
         id: runpy
         run: |
-          python scan_forks.py > stdout.txt
+          python scan_forks.py | tee py_stdout.txt
 
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Write stdout into subscribe.txt
+      - name: Write stdout directly into subscribe.txt
         run: |
           cd target_repo/config
-          cat ../../../stdout.txt > subscribe.txt
+          cat ../../../py_stdout.txt > subscribe.txt
 
       - name: Commit & Push
         run: |
