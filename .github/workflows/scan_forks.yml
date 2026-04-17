@@ -1,1 +1,49 @@
+name: Run scan_forks.py
 
+on:
+  schedule:
+    # 每 3 天一次，UTC 18:00 = 北京时间 02:00
+    - cron: "0 18 */3 * *"
+
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v3
+
+      - name: Checkout sourt repo
+        uses: actions/checkout@v3
+        with:
+          repository: fogret/sourt
+          path: sourt
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run scan_forks.py
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          python utils/scan_forks.py
+
+      - name: Commit & Push to sourt repo
+        run: |
+          cd sourt
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add output/projects.txt output/urls.txt
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto update from scan_forks.py"
+            git push
+          fi
