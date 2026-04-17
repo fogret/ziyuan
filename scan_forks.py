@@ -67,7 +67,7 @@ def fetch_subscribe(full_name):
 # 提取 URL
 def extract_urls(text):
     urls = URL_PATTERN.findall(text)
-    return [u.strip() for u in urls]
+    return list(set(u.strip() for u in urls))  # 单文件内去重
 
 # 测试 URL
 def test_url(url):
@@ -87,13 +87,13 @@ def main():
     open("scan.log", "w").close()
     open("result.log", "w").close()
 
-    log("=== 开始扫描所有 fork（极速 + 100% 准确率） ===")
+    log("=== 开始扫描所有 fork（极速 + 100% 准确率 + 去重） ===")
 
     forks = get_forks()
     log(f"共找到 {len(forks)} 个 fork")
 
     valid_forks = []
-    all_urls = {}
+    all_urls = {}  # URL → 来源 fork
 
     for f in forks:
         full_name = f["full_name"]
@@ -111,12 +111,13 @@ def main():
             continue
 
         urls = extract_urls(content)
-        log(f"[{full_name}] 提取到 {len(urls)} 个 URL")
+        log(f"[{full_name}] 提取到 {len(urls)} 个 URL（已去重）")
 
         for u in urls:
-            all_urls[u] = full_name
+            if u not in all_urls:  # fork 之间去重
+                all_urls[u] = full_name
 
-    log(f"共提取到 {len(all_urls)} 个唯一 URL，开始测速…")
+    log(f"共提取到 {len(all_urls)} 个唯一 URL（跨 fork 去重），开始测速…")
 
     final_urls = []
 
@@ -130,7 +131,7 @@ def main():
             else:
                 log(f"[FAIL] {url}")
 
-    final_urls.sort()
+    final_urls = sorted(set(final_urls))  # 最终去重
 
     # 写入 projects.txt
     with open("projects.txt", "w", encoding="utf-8") as f:
@@ -142,7 +143,7 @@ def main():
         for u in final_urls:
             f.write(u + "\n")
 
-    log("=== 完成！已生成 projects.txt、urls.txt、scan.log、result.log ===")
+    log("=== 完成！已生成 projects.txt、urls.txt、scan.log、result.log（全部去重） ===")
 
 if __name__ == "__main__":
     main()
