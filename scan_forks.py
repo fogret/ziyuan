@@ -12,7 +12,6 @@ TOKEN = os.getenv("GH_TOKEN")
 HEADERS = {"Authorization": f"Bearer {TOKEN}"} if TOKEN else {}
 
 def beijing_time():
-    """返回北京时间（UTC+8）"""
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() + 8*3600))
 
 def log(msg):
@@ -20,9 +19,6 @@ def log(msg):
     sys.stdout.write(f"[{ts}] {msg}\n")
     sys.stdout.flush()
 
-# -----------------------------
-# 获取 forks
-# -----------------------------
 def get_forks(page):
     url = f"https://api.github.com/repos/{OWNER}/{REPO}/forks?page={page}&per_page=100&sort=newest"
     r = requests.get(url, headers=HEADERS, timeout=10)
@@ -31,9 +27,6 @@ def get_forks(page):
         return []
     return r.json()
 
-# -----------------------------
-# 获取最近 7 天 commit 数
-# -----------------------------
 def get_recent_commits(user, repo, branch):
     url = f"https://api.github.com/repos/{user}/{repo}/commits?sha={branch}&per_page=20"
     r = requests.get(url, headers=HEADERS, timeout=10)
@@ -43,7 +36,6 @@ def get_recent_commits(user, repo, branch):
         return 0
 
     data = r.json()
-
     if isinstance(data, dict):
         log(f"  ⚠ GitHub 返回错误：{data.get('message')}")
         return 0
@@ -62,9 +54,6 @@ def get_recent_commits(user, repo, branch):
 
     return count
 
-# -----------------------------
-# 获取 subscribe.txt
-# -----------------------------
 def fetch_subscribe(user, repo, branch):
     raw_url = f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/config/subscribe.txt"
     try:
@@ -75,15 +64,9 @@ def fetch_subscribe(user, repo, branch):
         pass
     return ""
 
-# -----------------------------
-# 提取 URL
-# -----------------------------
 def extract_urls(text):
     return re.findall(r'https?://[^\s]+', text)
 
-# -----------------------------
-# 测试 URL 是否可访问
-# -----------------------------
 def test_url(url):
     try:
         r = requests.get(url, timeout=5)
@@ -93,9 +76,6 @@ def test_url(url):
         pass
     return False
 
-# -----------------------------
-# 主流程
-# -----------------------------
 def main():
     log("===== 开始筛选活跃 forks（7 天内 ≥ 7 次更新） =====")
     log(f"北京时间：{beijing_time()}")
@@ -104,9 +84,9 @@ def main():
     active_projects = []
     page = 1
 
-    # ⭐ 输出到 sourt 仓库
-    PROJECTS_PATH = "/home/runner/work/sourt/sourt/output/projects.txt"
-    URLS_PATH = "/home/runner/work/sourt/sourt/output/urls.txt"
+    # ⭐ 输出到当前仓库根目录
+    PROJECTS_PATH = "projects.txt"
+    URLS_PATH = "urls.txt"
 
     while True:
         forks = get_forks(page)
