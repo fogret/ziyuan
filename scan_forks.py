@@ -4,11 +4,12 @@ import os
 import subprocess
 import tempfile
 from datetime import datetime, timedelta, timezone
+import concurrent.futures
 
+# 配置
 OWNER = "Guovin"
 REPO = "iptv-api"
 API = "https://api.github.com"
-
 TOKEN = os.getenv("YONU")
 
 HEADERS = {
@@ -17,7 +18,6 @@ HEADERS = {
     "Authorization": f"Bearer {TOKEN}"
 }
 
-# 目标仓库
 TARGET_OWNER = "fogret"
 TARGET_REPO = "sourt"
 TARGET_FILE_PATH = "config/subscribe.txt"
@@ -45,17 +45,6 @@ def is_valid_stream(url):
     return False
 
 
-def log(msg):
-    with open("scan.log", "a", encoding="utf-8") as f:
-        f.write(msg + "\n")
-    print(msg)
-
-
-def log_result(msg):
-    with open("result.log", "a", encoding="utf-8") as f:
-        f.write(msg + "\n")
-
-
 def get_forks():
     forks = []
     page = 1
@@ -63,7 +52,7 @@ def get_forks():
         url = f"{API}/repos/{OWNER}/{REPO}/forks?per_page=100&page={page}"
         r = requests.get(url, headers=HEADERS)
         if r.status_code != 200:
-            log("获取 forks 失败：" + r.text)
+            print("获取 forks 失败：" + r.text)
             break
         data = r.json()
         if not data:
@@ -109,7 +98,7 @@ def test_url(url):
         return False
 
 
-def push_to_target_repo(new_urls):
+def push_to_target_repo(new_urls, now_str):
     try:
         repo_url = f"https://{TOKEN}@github.com/{TARGET_OWNER}/{TARGET_REPO}.git"
 
@@ -135,36 +124,31 @@ def push_to_target_repo(new_urls):
                 if whitelist_idx is not None:
                     bottom_lines = lines[whitelist_idx:]
 
-            # 北京时间
-            beijing_tz = timezone(timedelta(hours=8))
-            now = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
-            time_line = f"# 更新时间：{now}（北京时间）"
-
-            # 组合文件内容
+            time_line = f"# 更新时间：{now_str}（北京时间）"
             new_content = "\n".join(top_lines) + "\n" + time_line + "\n" + "\n".join(new_urls) + "\n\n" + "\n".join(bottom_lines)
 
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(new_content)
 
-            # Git 提交
             subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
             subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
             subprocess.run(["git", "add", file_path], check=True)
-            subprocess.run(["git", "commit", "-m", f"Update {now}"], check=True)
+            subprocess.run(["git", "commit", "-m", f"Update {now_str}"], check=True)
             subprocess.run(["git", "push", "origin", "HEAD"], check=True)
 
-        log("✅ 已推送到 fogret/sourt/config/subscribe.txt")
+        print("✅ 已推送到 fogret/sourt/config/subscribe.txt")
     except Exception as e:
-        log(f"❌ 推送失败：{str(e)}")
+        print(f"❌ 推送失败：{str(e)}")
 
 
 def main():
-    open("scan.log", "w").close()
-    open("result.log", "w").close()
+    # 北京时间
+    beijing_tz = timezone(timedelta(hours=8))
+    now_str = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    log("=== 开始扫描所有 fork ===")
+    print("=== 开始扫描所有 fork ===")
     forks = get_forks()
-    log(f"共找到 {len(forks)} 个 fork")
+    print(f"共找到 {len(forks)} 个 fork")
 
     valid_forks = []
     all_urls = {}
@@ -172,18 +156,18 @@ def main():
     for f in forks:
         full_name = f["full_name"]
         if not fork_recent(f):
-            log(f"[{full_name}] 超过 7 天未更新，跳过")
+            print(f"[{full_name}] 超过 7 天未更新，跳过")
             continue
-        log(f"[{full_name}] 最近7天内更新，处理中…")
+        print(f"[{full_name}] 最近7天内更新，处理中…")
         valid_forks.append(full_name)
 
         content = fetch_subscribe(full_name)
         if not content:
-            log(f"[{full_name}] 无 subscribe.txt")
+            print(f"[{full_name}] 无 subscribe.txt")
             continue
 
         urls = extract_urls(content)
-        log(f"[{full_name}] 提取到 {len(urls)} 个URL")
+        print(f"[{full_name}] 提取到 {len(urls)} 个URL")
 
         for u in urls:
             if not is_valid_stream(u):
@@ -191,10 +175,9 @@ def main():
             if u not in all_urls:
                 all_urls[u] = full_name
 
-    log(f"共提取 {len(all_urls)} 个URL，开始检测可用性…")
+    print(f"共提取 {len(all_urls)} 个URL，开始检测可用性…")
     final_urls = []
 
-    import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         futures = {executor.submit(test_url, url): url for url in all_urls.keys()}
         for future in concurrent.futures.as_completed(futures, timeout=600):
@@ -203,33 +186,32 @@ def main():
                 ok = future.result(timeout=6)
                 if ok:
                     final_urls.append(url)
-                    log(f"[OK] {url}")
-                    log_result(f"{url}    # 来自 fork：{all_urls[url]}")
+                    print(f"[OK] {url}")
                 else:
-                    log(f"[FAIL] {url}")
+                    print(f"[FAIL] {url}")
             except Exception:
-                log(f"[TIMEOUT] {url}")
+                print(f"[TIMEOUT] {url}")
 
     final_urls = sorted(set(final_urls))
 
-    # ================= 生成根目录两个文件 =================
-    # 项目地址
+    # ==================== 带时间戳 projects.txt ====================
     with open("projects.txt", "w", encoding="utf-8") as f:
+        f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for fk in valid_forks:
             f.write(f"https://github.com/{fk}\n")
 
-    # 链接地址
+    # ==================== 带时间戳 urls.txt ====================
     with open("urls.txt", "w", encoding="utf-8") as f:
+        f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for u in final_urls:
             f.write(u + "\n")
-    # =====================================================
 
     if final_urls:
-        push_to_target_repo(final_urls)
+        push_to_target_repo(final_urls, now_str)
     else:
-        log("⚠️ 无可用链接，不推送")
+        print("⚠️ 无可用链接，不推送")
 
-    log("=== 全部完成 ===")
+    print("=== 全部完成 ===")
 
 
 if __name__ == "__main__":
