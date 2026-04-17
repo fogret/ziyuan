@@ -2,7 +2,7 @@ name: Run scan_forks.py
 
 on:
   schedule:
-    - cron: "0 18 */3 * *"   # 每 3 天一次，北京时间 02:00
+    - cron: "0 18 */3 * *"
   workflow_dispatch:
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          python utils/scan_forks.py
+          python scan_forks.py
 
       - name: Commit & Push results
         run: |
