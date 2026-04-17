@@ -2,6 +2,9 @@ name: Replace Speedtest Block
 
 on:
   workflow_dispatch:
+  schedule:
+    # 每天北京时间 24:00（UTC 16:00）
+    - cron: "0 16 * * *"
 
 jobs:
   update:
@@ -16,23 +19,27 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run PY and capture output
-        run: python scan_forks.py > result.txt
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run scan_forks.py
+        env:
+          YONU: ${{ secrets.YONU }}
+        run: python scan_forks.py
 
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Replace block starting from 自动测速结果（测试版）
+      - name: Replace block with clean result + update time
         run: |
           cd target_repo/config
 
           awk '
             BEGIN {in_block=0}
-            /^# 自动测速结果（测试版）/ {
+            /^# 更新时间（北京时间）/ {
               # 从这里开始覆盖，包括这一行
-              print "# 自动测速结果（测试版）"
-              print "# 时间： " strftime("%Y-%m-%d %H:%M:%S", systime()+8*3600)
-              while ((getline line < "../../../result.txt") > 0) print line
+              print "# 更新时间（北京时间）： " strftime("%Y-%m-%d %H:%M:%S", systime()+8*3600)
+              while ((getline line < "../../../urls.txt") > 0) print line
               in_block=1
               next
             }
@@ -53,5 +60,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "Replace speedtest block" || echo "No changes"
+          git commit -m "Auto update clean result block" || echo "No changes"
           git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
