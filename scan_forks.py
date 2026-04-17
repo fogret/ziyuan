@@ -20,7 +20,7 @@ HEADERS = {
 DAYS = 7
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 
-# 完整 URL 提取
+# URL 提取
 URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
 def log(msg):
@@ -71,7 +71,7 @@ def extract_urls(text):
     urls = URL_PATTERN.findall(text)
     return list(set(u.strip() for u in urls))
 
-# 测试 URL（防卡死）
+# 测试 URL（强制连接 + 读取超时）
 def test_url(url):
     try:
         r = requests.head(url, timeout=(3, 3))
@@ -81,7 +81,8 @@ def test_url(url):
         pass
 
     try:
-        r = requests.get(url, timeout=(3, 3))
+        r = requests.get(url, timeout=(3, 3), stream=True)
+        r.close()
         return r.status_code == 200
     except:
         return False
@@ -90,7 +91,7 @@ def main():
     open("scan.log", "w").close()
     open("result.log", "w").close()
 
-    log("=== 开始扫描所有 fork（极速 + 去重 + 防卡死） ===")
+    log("=== 开始扫描所有 fork（防卡死 + 去重 + 极速） ===")
 
     forks = get_forks()
     log(f"共找到 {len(forks)} 个 fork")
@@ -125,14 +126,20 @@ def main():
     final_urls = []
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        results = executor.map(test_url, all_urls.keys())
-        for url, ok in zip(all_urls.keys(), results):
-            if ok:
-                final_urls.append(url)
-                log(f"[OK] {url}")
-                log_result(f"{url}    # 来自 fork：{all_urls[url]}")
-            else:
-                log(f"[FAIL] {url}")
+        futures = {executor.submit(test_url, url): url for url in all_urls.keys()}
+
+        for future in concurrent.futures.as_completed(futures, timeout=600):
+            url = futures[future]
+            try:
+                ok = future.result(timeout=6)
+                if ok:
+                    final_urls.append(url)
+                    log(f"[OK] {url}")
+                    log_result(f"{url}    # 来自 fork：{all_urls[url]}")
+                else:
+                    log(f"[FAIL] {url}")
+            except Exception:
+                log(f"[TIMEOUT] {url}")
 
     final_urls = sorted(set(final_urls))  # 最终去重
 
@@ -146,7 +153,7 @@ def main():
         for u in final_urls:
             f.write(u + "\n")
 
-    log("=== 完成！已生成 projects.txt、urls.txt、scan.log、result.log（全部去重 + 防卡死） ===")
+    log("=== 完成！已生成 projects.txt、urls.txt、scan.log、result.log（稳定无卡死） ===")
 
 if __name__ == "__main__":
     main()
