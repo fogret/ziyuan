@@ -30,26 +30,31 @@ jobs:
         run: |
           python scan_forks.py
 
-      # ⭐ 克隆目标仓库 fogret/sourt
+      # ⭐ 使用 Token 克隆目标仓库（关键）
       - name: Clone target repo (fogret/sourt)
         run: |
-          git clone https://github.com/fogret/sourt target_repo
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fogret/sourt target_repo
 
-      # ⭐ 替换订阅源列表（不动注释、不动 WHITELIST）
-      - name: Update subscribe.txt (replace subscription list only)
+      # ⭐ 替换订阅源列表 + 写入更新时间（不动注释、不动 WHITELIST）
+      - name: Update subscribe.txt (replace subscription list only + add update time)
         run: |
           cd target_repo/config
 
-          NEW_CONTENT=$(printf "%s\n" "$(cat ../../urls.txt)")
+          # 读取 urls.txt 内容
+          NEW_URLS=$(printf "%s\n" "$(cat ../../urls.txt)")
 
-          awk -v new="$NEW_CONTENT" '
+          # 生成北京时间更新时间
+          UPDATE_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
+
+          awk -v urls="$NEW_URLS" -v up="更新时间（北京时间）：'"$UPDATE_TIME"'" '
             BEGIN {in_list=0; in_white=0}
             /^\[WHITELIST\]/ {in_white=1; in_list=0; print; next}
             /^#/ {print; next}
             NF==0 && !in_white {print; next}
 
             !in_white && !in_list {
-              print new
+              print "# " up
+              print urls
               in_list=1
               next
             }
@@ -66,5 +71,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "自动更新订阅源列表" || echo "No changes"
+          git commit -m "自动更新订阅源列表 + 更新时间" || echo "No changes"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fogret/sourt -f
