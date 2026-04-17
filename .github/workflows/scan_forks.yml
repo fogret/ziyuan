@@ -2,9 +2,7 @@ name: Run scan_forks.py
 
 on:
   schedule:
-    # 每 3 天一次，UTC 18:00 = 北京时间 02:00
-    - cron: "0 18 */3 * *"
-
+    - cron: "0 18 */3 * *"   # 每 3 天一次，北京时间 02:00
   workflow_dispatch:
 
 jobs:
