@@ -1,9 +1,8 @@
-name: Replace Speedtest Block
+name: Update Subscribe
 
 on:
   workflow_dispatch:
   schedule:
-    # 每天北京时间 24:00（UTC 16:00）
     - cron: "0 16 * * *"
 
 jobs:
@@ -30,29 +29,16 @@ jobs:
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Replace block with clean result + update time
+      - name: Replace subscribe block cleanly
         run: |
           cd target_repo/config
 
-          awk '
-            BEGIN {in_block=0}
-            /^# 更新时间（北京时间）/ {
-              # 从这里开始覆盖，包括这一行
-              print "# 更新时间（北京时间）： " strftime("%Y-%m-%d %H:%M:%S", systime()+8*3600)
-              while ((getline line < "../../../urls.txt") > 0) print line
-              in_block=1
-              next
-            }
-            /^\[WHITELIST\]/ {
-              # 到这里结束覆盖
-              in_block=0
-              print "[WHITELIST]"
-              next
-            }
-            !in_block {print}
-          ' subscribe.txt > new_subscribe.txt
-
-          mv new_subscribe.txt subscribe.txt
+          head -n 5 subscribe.txt > new.txt
+          echo "# 更新时间（北京时间）：$(date '+%Y-%m-%d %H:%M:%S')" >> new.txt
+          cat ../../../urls.txt >> new.txt
+          echo "" >> new.txt
+          awk 'NR>=6 && /^\[WHITELIST\]/ {start=1} start' subscribe.txt >> new.txt
+          mv new.txt subscribe.txt
 
       - name: Commit & Push
         run: |
@@ -60,5 +46,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "Auto update clean result block" || echo "No changes"
+          git commit -m "Auto update subscribe" || echo "No changes"
           git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
