@@ -1,4 +1,4 @@
-name: Update subscribe list
+name: Update SUBSCRIBE block
 
 on:
   workflow_dispatch:
@@ -22,21 +22,23 @@ jobs:
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Update subscribe.txt
+      - name: Replace SUBSCRIBE block
         run: |
           cd target_repo/config
 
-          # 读取原文件
+          # 生成新文件
           awk '
             BEGIN {in_sub=0}
-            /^\[SUBSCRIBE\]/ {print; in_sub=1; next}
+            /^\[SUBSCRIBE\]/ {
+                print "[SUBSCRIBE]"
+                # 插入新的 SUBSCRIBE 内容
+                while ((getline line < "../../../subscribe_block.txt") > 0) print line
+                close("../../../subscribe_block.txt")
+                in_sub=1
+                next
+            }
             /^\[/ && $0 !~ /^\[SUBSCRIBE\]/ {in_sub=0}
             !in_sub {print}
-            in_sub && $0 ~ /^\[SUBSCRIBE\]/ {
-              while ((getline line < "../../../urls.txt") > 0) print line
-              close("../../../urls.txt")
-              in_sub=0
-            }
           ' subscribe.txt > subscribe.new
 
           mv subscribe.new subscribe.txt
@@ -47,5 +49,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "Update subscribe list" || echo "No changes"
+          git commit -m "Update SUBSCRIBE block" || echo "No changes"
           git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
