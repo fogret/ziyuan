@@ -1,4 +1,4 @@
-name: Update SUBSCRIBE block
+name: Test Write Subscribe
 
 on:
   workflow_dispatch:
@@ -22,38 +22,16 @@ jobs:
       - name: Clone target repo
         run: git clone https://github.com/fogret/sourt target_repo
 
-      - name: Replace SUBSCRIBE block (safe mode)
+      - name: Append test content to subscribe.txt
         run: |
           cd target_repo/config
 
-          echo "开始替换 SUBSCRIBE 区域..."
-
-          # 生成新文件
-          {
-            in_sub=0
-            while IFS= read -r line; do
-              # 遇到 [SUBSCRIBE]，写入标题 + 新内容
-              if [[ "$line" == "[SUBSCRIBE]" ]]; then
-                echo "[SUBSCRIBE]"
-                cat ../../../subscribe_block.txt
-                in_sub=1
-                continue
-              fi
-
-              # 遇到下一个区域标题，退出 SUBSCRIBE 区域
-              if [[ "$line" =~ ^\[.*\]$ ]] && [[ "$line" != "[SUBSCRIBE]" ]]; then
-                in_sub=0
-              fi
-
-              # 非 SUBSCRIBE 区域的内容原样写入
-              if [[ $in_sub -eq 0 ]]; then
-                echo "$line"
-              fi
-            done < subscribe.txt
-          } > subscribe.new
-
-          mv subscribe.new subscribe.txt
-          echo "SUBSCRIBE 区域替换完成"
+          echo "" >> subscribe.txt
+          echo "# ===== 自动测试写入 =====" >> subscribe.txt
+          echo "# 时间：$(date '+%Y-%m-%d %H:%M:%S')" >> subscribe.txt
+          echo "# 以下是测试写入内容：" >> subscribe.txt
+          cat ../../../subscribe_block.txt >> subscribe.txt
+          echo "# ===== 测试写入结束 =====" >> subscribe.txt
 
       - name: Commit & Push
         run: |
@@ -61,5 +39,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add config/subscribe.txt
-          git commit -m "Update SUBSCRIBE block" || echo "No changes"
+          git commit -m "Test write subscribe" || echo "No changes"
           git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
