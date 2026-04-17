@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout current repo
+      - name: Checkout current repo (紫苑)
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -21,12 +21,20 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run scan_forks.py
+      - name: Run scan_forks.py (生成 projects.txt / urls.txt)
         env:
           YONU: ${{ secrets.YONU }}
         run: python scan_forks.py
 
-      - name: Clone target repo
+      - name: Commit generated files back to 紫苑
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add projects.txt urls.txt
+          git commit -m "Update local projects.txt and urls.txt" || echo "No changes"
+          git push
+
+      - name: Clone target repo (sourt)
         run: git clone https://github.com/fogret/sourt target_repo
 
       - name: Replace subscribe block cleanly
@@ -34,13 +42,13 @@ jobs:
           cd target_repo/config
 
           head -n 5 subscribe.txt > new.txt
-          echo "# 更新时间（北京时间）：$(date '+%Y-%m-%d %H:%M:%S')" >> new.txt
+          echo "# 更新时间（北京时间）：$(date -u -d '+8 hour' '+%Y-%m-%d %H:%M:%S')" >> new.txt
           cat ../../urls.txt >> new.txt
           echo "" >> new.txt
           awk 'NR>=6 && /^\[WHITELIST\]/ {start=1} start' subscribe.txt >> new.txt
           mv new.txt subscribe.txt
 
-      - name: Commit & Push
+      - name: Commit & Push to sourt
         run: |
           cd target_repo
           git config user.email "github-actions[bot]@users.noreply.github.com"
