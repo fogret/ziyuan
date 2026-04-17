@@ -1,76 +1,184 @@
-name: Update Subscribe
+import requests
+import re
+import os
+import concurrent.futures
+from datetime import datetime, timedelta
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 16 * * *"
+OWNER = "Guovin"
+REPO = "iptv-api"
+API = "https://api.github.com"
 
-jobs:
-  update:
-    runs-on: ubuntu-latest
+TOKEN = os.getenv("YONU")
 
-    steps:
-      - name: Checkout current repo (紫苑)
-        uses: actions/checkout@v4
+HEADERS = {
+    "Accept": "application/vnd.github+json",
+    "User-Agent": "iptv-fork-scan",
+    "Authorization": f"Bearer {TOKEN}"
+}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+DAYS = 7
+cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 
-      - name: Install dependencies
-        run: pip install requests
+URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
-      - name: Run scan_forks.py (生成 projects.txt / urls.txt)
-        env:
-          YONU: ${{ secrets.YONU }}
-        run: python scan_forks.py
 
-      # ★ 你要求：紫苑仓库必须正常推送，不强推
-      # ★ 我严格按你要求：只增加同步，不改其它逻辑
-      - name: Commit generated files back to 紫苑
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
+def is_valid_stream(url):
+    url = url.lower()
 
-          # 先提交 → 工作区干净 → 才能 pull --rebase
-          git add projects.txt urls.txt
-          git commit -m "Update local projects.txt and urls.txt" || echo "No changes"
+    allow_ext = (".m3u", ".m3u8", ".txt")
 
-          # ★ 你要求：不能强推 → 必须同步远程
-          git pull --rebase
+    deny_ext = (
+        ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
+        ".php", ".html", ".htm", ".json", ".xml",
+        ".zip", ".rar", ".7z", ".tar", ".gz",
+        ".mp4", ".flv", ".ts"
+    )
 
-          git push
+    if url.endswith(deny_ext):
+        return False
 
-      - name: Clone target repo (sourt)
-        run: git clone https://github.com/fogret/sourt target_repo
+    if url.endswith(allow_ext):
+        return True
 
-      - name: Replace subscribe block cleanly
-        run: |
-          cd target_repo/config
+    if "/live/" in url:
+        return True
 
-          # 保留前 5 行
-          head -n 5 subscribe.txt > new.txt
+    return False
 
-          # ★ 必须是北京时间
-          echo "# 更新时间（北京时间）：$(date -u -d '+8 hour' '+%Y-%m-%d %H:%M:%S')" >> new.txt
 
-          # 加入 urls.txt
-          cat ../../urls.txt >> new.txt
+def log(msg):
+    with open("scan.log", "a", encoding="utf-8") as f:
+        f.write(msg + "\n")
+    print(msg)
 
-          # ★ 必须加一个空行
-          echo "" >> new.txt
 
-          # 保留 WHITELIST 及以下
-          awk 'NR>=6 && /^\[WHITELIST\]/ {start=1} start' subscribe.txt >> new.txt
+def log_result(msg):
+    with open("result.log", "a", encoding="utf-8") as f:
+        f.write(msg + "\n")
 
-          mv new.txt subscribe.txt
 
-      - name: Commit & Push to sourt
-        run: |
-          cd target_repo
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git add config/subscribe.txt
-          git commit -m "Auto update subscribe" || echo "No changes"
-          git push https://x-access-token:${{ secrets.YONU }}@github.com/fogret/sourt -f
+def get_forks():
+    forks = []
+    page = 1
+    while True:
+        url = f"{API}/repos/{OWNER}/{REPO}/forks?per_page=100&page={page}"
+        r = requests.get(url, headers=HEADERS)
+        if r.status_code != 200:
+            log("获取 forks 失败：" + r.text)
+            break
+        data = r.json()
+        if not data:
+            break
+        forks.extend(data)
+        page += 1
+    return forks
+
+
+def fork_recent(fork):
+    update_date = datetime.strptime(fork["updated_at"], "%Y-%m-%dT%H:%M:%SZ")
+    return update_date >= cutoff_date
+
+
+def fetch_subscribe(full_name):
+    raw_url = f"https://raw.githubusercontent.com/{full_name}/master/config/subscribe.txt"
+    try:
+        r = requests.get(raw_url, timeout=(3, 3))
+        if r.status_code != 200:
+            return None
+        return r.text
+    except:
+        return None
+
+
+def extract_urls(text):
+    urls = URL_PATTERN.findall(text)
+    return list(set(u.strip() for u in urls))
+
+
+def test_url(url):
+    try:
+        r = requests.head(url, timeout=(3, 3))
+        if r.status_code == 200:
+            return True
+    except:
+        pass
+
+    try:
+        r = requests.get(url, timeout=(3, 3), stream=True)
+        r.close()
+        return r.status_code == 200
+    except:
+        return False
+
+
+def main():
+    open("scan.log", "w").close()
+    open("result.log", "w").close()
+
+    log("=== 开始扫描所有 fork ===")
+
+    forks = get_forks()
+    log(f"共找到 {len(forks)} 个 fork")
+
+    valid_forks = []
+    all_urls = {}
+
+    for f in forks:
+        full_name = f["full_name"]
+
+        if not fork_recent(f):
+            log(f"[{full_name}] 超过 7 天未更新，跳过")
+            continue
+
+        log(f"[{full_name}] 最近 7 天有更新，开始处理…")
+        valid_forks.append(full_name)
+
+        content = fetch_subscribe(full_name)
+        if not content:
+            log(f"[{full_name}] 无 subscribe.txt")
+            continue
+
+        urls = extract_urls(content)
+        log(f"[{full_name}] 提取到 {len(urls)} 个 URL")
+
+        for u in urls:
+            if not is_valid_stream(u):
+                continue
+            if u not in all_urls:
+                all_urls[u] = full_name
+
+    log(f"共提取到 {len(all_urls)} 个 IPTV URL，开始测速…")
+
+    final_urls = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(test_url, url): url for url in all_urls.keys()}
+
+        for future in concurrent.futures.as_completed(futures, timeout=600):
+            url = futures[future]
+            try:
+                ok = future.result(timeout=6)
+                if ok:
+                    final_urls.append(url)
+                    log(f"[OK] {url}")
+                    log_result(f"{url}    # 来自 fork：{all_urls[url]}")
+                else:
+                    log(f"[FAIL] {url}")
+            except Exception:
+                log(f"[TIMEOUT] {url}")
+
+    final_urls = sorted(set(final_urls))
+
+    with open("projects.txt", "w", encoding="utf-8") as f:
+        for fk in valid_forks:
+            f.write(f"https://github.com/{fk}\n")
+
+    with open("urls.txt", "w", encoding="utf-8") as f:
+        for u in final_urls:
+            f.write(u + "\n")
+
+    log("=== 完成 ===")
+
+
+if __name__ == "__main__":
+    main()
