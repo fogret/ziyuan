@@ -29,19 +29,24 @@ URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
 def is_valid_stream(url):
     url = url.lower()
-    allow_ext = (".m3u", ".m3u8", ".txt")
-    deny_ext = (
-        ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
+    # 禁止的后缀
+    deny_exts = [
+        ".m3u8", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
         ".php", ".html", ".htm", ".json", ".xml",
         ".zip", ".rar", ".7z", ".tar", ".gz",
         ".mp4", ".flv", ".ts"
-    )
-    if url.endswith(deny_ext):
-        return False
-    if url.endswith(allow_ext):
-        return True
-    if "/live/" in url:
-        return True
+    ]
+    # 允许的后缀
+    allow_exts = [".m3u", ".txt"]
+
+    for ext in deny_exts:
+        if ext in url:
+            return False
+
+    for ext in allow_exts:
+        if ext in url:
+            return True
+
     return False
 
 
