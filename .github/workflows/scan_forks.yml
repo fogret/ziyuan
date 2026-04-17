@@ -26,18 +26,25 @@ jobs:
         run: |
           cd target_repo/config
 
-          # 生成新文件
+          # 用 awk 精准替换 SUBSCRIBE 区域
           awk '
             BEGIN {in_sub=0}
+            
+            # 遇到 [SUBSCRIBE]，打印它，然后插入新内容
             /^\[SUBSCRIBE\]/ {
                 print "[SUBSCRIBE]"
-                # 插入新的 SUBSCRIBE 内容
                 while ((getline line < "../../../subscribe_block.txt") > 0) print line
                 close("../../../subscribe_block.txt")
                 in_sub=1
                 next
             }
-            /^\[/ && $0 !~ /^\[SUBSCRIBE\]/ {in_sub=0}
+
+            # 遇到其他区域标题，退出 SUBSCRIBE 区域
+            /^\[/ && $0 !~ /^\[SUBSCRIBE\]/ {
+                in_sub=0
+            }
+
+            # 非 SUBSCRIBE 区域的内容原样打印
             !in_sub {print}
           ' subscribe.txt > subscribe.new
 
