@@ -22,6 +22,33 @@ cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
 
+def is_valid_stream(url):
+    url = url.lower()
+
+    # 允许的 IPTV 格式
+    allow_ext = (".m3u", ".m3u8", ".txt")
+
+    # 禁止的所有其它格式
+    deny_ext = (
+        ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
+        ".php", ".html", ".htm", ".json", ".xml",
+        ".zip", ".rar", ".7z", ".tar", ".gz",
+        ".mp4", ".flv", ".ts"
+    )
+
+    if url.endswith(deny_ext):
+        return False
+
+    if url.endswith(allow_ext):
+        return True
+
+    # 特殊情况：有些 IPTV 链接没有后缀，但以 /live/ 结尾
+    if "/live/" in url:
+        return True
+
+    return False
+
+
 def log(msg):
     with open("scan.log", "a", encoding="utf-8") as f:
         f.write(msg + "\n")
@@ -118,10 +145,12 @@ def main():
         log(f"[{full_name}] 提取到 {len(urls)} 个 URL")
 
         for u in urls:
+            if not is_valid_stream(u):
+                continue
             if u not in all_urls:
                 all_urls[u] = full_name
 
-    log(f"共提取到 {len(all_urls)} 个唯一 URL，开始测速…")
+    log(f"共提取到 {len(all_urls)} 个 IPTV URL，开始测速…")
 
     final_urls = []
 
