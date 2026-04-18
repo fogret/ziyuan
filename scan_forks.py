@@ -10,7 +10,7 @@ import concurrent.futures
 OWNER = "Guovin"
 REPO = "iptv-api"
 API = "https://api.github.com"
-TOKEN = os.getenv("YONU")
+TOKEN = os.getenv("YONU")  # 这里就是你原版的 YONU，我不动
 
 HEADERS = {
     "Accept": "application/vnd.github+json",
@@ -18,6 +18,7 @@ HEADERS = {
     "Authorization": f"Bearer {TOKEN}"
 }
 
+# 推送到你另一个仓库（你自己填的）
 TARGET_OWNER = "fogret"
 TARGET_REPO = "sourt"
 TARGET_FILE_PATH = "config/subscribe.txt"
@@ -29,14 +30,12 @@ URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
 def is_valid_stream(url):
     url = url.lower()
-    # 禁止的后缀
     deny_exts = [
         ".m3u8", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
         ".php", ".html", ".htm", ".json", ".xml",
         ".zip", ".rar", ".7z", ".tar", ".gz",
         ".mp4", ".flv", ".ts"
     ]
-    # 允许的后缀
     allow_exts = [".m3u", ".txt"]
 
     for ext in deny_exts:
@@ -147,7 +146,6 @@ def push_to_target_repo(new_urls, now_str):
 
 
 def main():
-    # 北京时间
     beijing_tz = timezone(timedelta(hours=8))
     now_str = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -199,13 +197,11 @@ def main():
 
     final_urls = sorted(set(final_urls))
 
-    # ==================== 带时间戳 projects.txt ====================
     with open("projects.txt", "w", encoding="utf-8") as f:
         f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for fk in valid_forks:
             f.write(f"https://github.com/{fk}\n")
 
-    # ==================== 带时间戳 urls.txt ====================
     with open("urls.txt", "w", encoding="utf-8") as f:
         f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for u in final_urls:
