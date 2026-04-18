@@ -3,7 +3,7 @@ name: IPTV 扫描推送
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 16 * * 0'  # 周日 UTC16点 = 北京时间 周一 00:00
+    - cron: '0 16 * * 0'
 
 jobs:
   run-scan:
@@ -15,7 +15,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,15 +25,14 @@ jobs:
         run: pip install requests
 
       - name: Run script
+        env:
+          YONU: ${{ secrets.YONU }}   # 这里必须是 YONU
         run: python scan_forks.py
-
-      - name: Pull latest before push
-        run: git pull --rebase
 
       - name: Commit and push
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add channels.txt channels.m3u process.log || true
-          git diff --quiet || git commit -m "Auto update IPTV channels"
+          git add projects.txt urls.txt
+          git diff --quiet || git commit -m "Auto update files"
           git push
