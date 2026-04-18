@@ -1,0 +1,33 @@
+name: AI自动清洗分类频道(无未分类)
+
+on:
+  workflow_dispatch:
+  push:
+  schedule:
+    - cron: '0 12 * * *'
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run AI频道处理
+        run: python channel_ai.py
+
+      - name: Commit and push
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add channels_output.txt channels_output.m3u
+          git commit -m "AI自动更新频道" || exit 0
+          git push
