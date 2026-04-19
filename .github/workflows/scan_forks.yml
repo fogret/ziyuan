@@ -1,4 +1,4 @@
-name: IPTV 跨仓库推送
+name: IPTV 扫描推送
 
 on:
   workflow_dispatch:
@@ -6,20 +6,33 @@ on:
     - cron: '0 16 * * 0'
 
 jobs:
-  build:
+  run-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install requests
         run: pip install requests
 
       - name: Run script
         env:
           YONU: ${{ secrets.YONU }}
         run: python scan_forks.py
+
+      - name: Commit and push
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add projects.txt urls.txt
+          git diff --quiet || git commit -m "Auto update files"
+          git push
