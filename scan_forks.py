@@ -1,27 +1,20 @@
 import requests
 import re
 import os
-import subprocess
-import tempfile
-from datetime import datetime, timedelta, timezone
 import concurrent.futures
+from datetime import datetime, timedelta, timezone
 
 # 配置
 OWNER = "Guovin"
 REPO = "iptv-api"
 API = "https://api.github.com"
-TOKEN = os.getenv("YONU")  # 这里就是你原版的 YONU，我不动
+TOKEN = os.getenv("YONU")
 
 HEADERS = {
     "Accept": "application/vnd.github+json",
     "User-Agent": "iptv-fork-scan",
     "Authorization": f"Bearer {TOKEN}"
 }
-
-# 推送到你另一个仓库（你自己填的）
-TARGET_OWNER = "fogret"
-TARGET_REPO = "sourt"
-TARGET_FILE_PATH = "config/subscribe.txt"
 
 DAYS = 7
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
@@ -41,11 +34,9 @@ def is_valid_stream(url):
     for ext in deny_exts:
         if ext in url:
             return False
-
     for ext in allow_exts:
         if ext in url:
             return True
-
     return False
 
 
@@ -102,49 +93,6 @@ def test_url(url):
         return False
 
 
-def push_to_target_repo(new_urls, now_str):
-    try:
-        repo_url = f"https://{TOKEN}@github.com/{TARGET_OWNER}/{TARGET_REPO}.git"
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run(["git", "clone", repo_url, tmpdir], check=True, capture_output=True)
-            os.chdir(tmpdir)
-
-            file_path = TARGET_FILE_PATH
-            top_lines = []
-            bottom_lines = []
-
-            if os.path.exists(file_path):
-                with open(file_path, "r", encoding="utf-8") as f:
-                    lines = f.read().splitlines(keepends=False)
-
-                whitelist_idx = None
-                for i, line in enumerate(lines):
-                    if line.strip() == "[WHITELIST]":
-                        whitelist_idx = i
-                        break
-
-                top_lines = lines[:5]
-                if whitelist_idx is not None:
-                    bottom_lines = lines[whitelist_idx:]
-
-            time_line = f"# 更新时间：{now_str}（北京时间）"
-            new_content = "\n".join(top_lines) + "\n" + time_line + "\n" + "\n".join(new_urls) + "\n\n" + "\n".join(bottom_lines)
-
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(new_content)
-
-            subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
-            subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
-            subprocess.run(["git", "add", file_path], check=True)
-            subprocess.run(["git", "commit", "-m", f"Update {now_str}"], check=True)
-            subprocess.run(["git", "push", "origin", "HEAD"], check=True)
-
-        print("✅ 已推送到 fogret/sourt/config/subscribe.txt")
-    except Exception as e:
-        print(f"❌ 推送失败：{str(e)}")
-
-
 def main():
     beijing_tz = timezone(timedelta(hours=8))
     now_str = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -197,20 +145,47 @@ def main():
 
     final_urls = sorted(set(final_urls))
 
+    # 写入 projects.txt
     with open("projects.txt", "w", encoding="utf-8") as f:
         f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for fk in valid_forks:
             f.write(f"https://github.com/{fk}\n")
 
+    # 写入 urls.txt
     with open("urls.txt", "w", encoding="utf-8") as f:
         f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for u in final_urls:
             f.write(u + "\n")
 
+    # 写入 config/subscribe.txt
     if final_urls:
-        push_to_target_repo(final_urls, now_str)
+        os.makedirs("config", exist_ok=True)
+        file_path = "config/subscribe.txt"
+        top_lines = []
+        bottom_lines = []
+
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                lines = f.read().splitlines(keepends=False)
+
+            whitelist_idx = None
+            for i, line in enumerate(lines):
+                if line.strip() == "[WHITELIST]":
+                    whitelist_idx = i
+                    break
+
+            top_lines = lines[:5]
+            if whitelist_idx is not None:
+                bottom_lines = lines[whitelist_idx:]
+
+        time_line = f"# 更新时间：{now_str}（北京时间）"
+        new_content = "\n".join(top_lines) + "\n" + time_line + "\n" + "\n".join(final_urls) + "\n\n" + "\n".join(bottom_lines)
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print("✅ 已写入本地 config/subscribe.txt")
     else:
-        print("⚠️ 无可用链接，不推送")
+        print("⚠️ 无可用链接，不生成")
 
     print("=== 全部完成 ===")
 
