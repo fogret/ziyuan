@@ -26,13 +26,13 @@ jobs:
 
       - name: Run script
         env:
-          YONU: ${{ secrets.YONU }}   # 这里必须是 YONU
+          YONU: ${{ secrets.YONU }}
         run: python scan_forks.py
 
       - name: Commit and push
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add projects.txt urls.txt
-          git diff --quiet || git commit -m "Auto update files"
+          git add projects.txt urls.txt config/subscribe.txt
+          git diff --quiet || git commit -m "Auto update IPTV data"
           git push
