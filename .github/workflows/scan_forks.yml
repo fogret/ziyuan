@@ -30,17 +30,23 @@ jobs:
           YONU: ${{ secrets.YONU }}
         run: python scan_forks.py
 
-      - name: List generated files
-        run: ls -l
+      # 关键：先看文件到底在不在
+      - name: Check files exist
+        run: |
+          ls -l
+          cat projects.txt || echo "projects.txt 不存在"
+          cat urls.txt || echo "urls.txt 不存在"
 
-      - name: Commit and push
+      - name: Force commit & push
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          
-          git add projects.txt urls.txt
-          
-          # 强制提交，不管有没有变化都提交
-          git commit -m "Auto update $(date +'%Y-%m-%d %H:%M:%S')" --allow-empty
-          
+
+          # 把文件强制更新
+          touch projects.txt urls.txt config/subscribe.txt 2>/dev/null || true
+
+          git add projects.txt urls.txt config/subscribe.txt
+
+          # 重点：不管有没有变化，直接提交，不判断
+          git commit -m "Auto update list"
           git push
