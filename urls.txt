@@ -1,4 +1,4 @@
-# 更新时间：2026-04-20 10:28:41（北京时间）
+# 更新时间：2026-04-20 12:14:43（北京时间）
 http://1.94.31.214/live/live9/dgtv.txt
 http://1.94.31.214/live/livelite.txt
 http://117.72.68.25:9230/latest.txt
@@ -54,7 +54,6 @@ https://cdn.jsdelivr.net/gh/jisoypub/iptv@main/ipv4.m3u
 https://cdn.jsdelivr.net/gh/jisoypub/iptv@main/ipv6.m3u
 https://cdn.jsdelivr.net/gh/jisoypub/iptv@main/radio.m3u
 https://cdn.jsdelivr.net/gh/qwerttvv/Beijing-IPTV@master/IPTV-Mobile-Multicast.m3u
-https://cdn.jsdelivr.net/gh/qwerttvv/Beijing-IPTV@master/IPTV-Mobile.m3u
 https://cdn.jsdelivr.net/gh/qwerttvv/Beijing-IPTV@master/IPTV-Unicom-Multicast.m3u
 https://cdn.jsdelivr.net/gh/qwerttvv/Beijing-IPTV@master/IPTV-Unicom.m3u
 https://cdn.jsdelivr.net/gh/rain12335/zbiptv@master/zubo_all.txt
@@ -206,7 +205,6 @@ https://ghfast.top/github.com/gnodgl/IPTV/blob/master/IHOT.m3u
 https://ghfast.top/github.com/gnodgl/IPTV/blob/master/IPTV.m3u
 https://ghfast.top/github.com/gnodgl/IPTV/blob/master/STV.m3u
 https://ghfast.top/github.com/zzmaze/iptv/blob/main/cctv.m3u
-https://ghfast.top/github.com/zzmaze/iptv/blob/main/weishi.m3u
 https://ghfast.top/https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt
 https://ghfast.top/https://raw.githubusercontent.com/ChiSheng9/iptv/refs/heads/master/playlist.m3u
 https://ghfast.top/https://raw.githubusercontent.com/SonyIPTV/Sony-IPTV-Live/refs/heads/main/Sony%20IPTV%20Live.m3u
@@ -305,9 +303,8 @@ https://github.com/zilong7728/Collect-IPTV/blob/main/best_sorted.m3u
 https://github.com/zwc456baby/iptv_alive/raw/refs/heads/master/live.txt
 https://gitlab.com/p2v5/wangtv/-/raw/main/lunbo.txt
 https://gitlab.com/tvkj/loong/-/raw/main/loog.txt
-https://goodiptv.vercel.app/huyayqk.m3u
+https://goodiptv.vercel.app/douyuyqk.m3u
 https://ifruitlet.com/haiwai.m3u
-https://imghost.subtlyrabbit.top/iptv/subscribe/ipv4v6.txt
 https://iptv-org.github.io/iptv/categories/sports.m3u
 https://iptv-org.github.io/iptv/countries/cn.m3u
 https://iptv-org.github.io/iptv/countries/hk.m3u
@@ -735,6 +732,7 @@ https://tvv.tw/github.com/fafa002/yf2025/blob/main/yiyifafa.txt
 https://tzdr.com/iptv.txt
 https://www.3kjs.com/tv.txt
 https://www.goodiptv.club/bililive.m3u
+https://www.goodiptv.club/yylunbo.m3u?url=https://lunbo.freetv.top
 https://www.iyouhun.com/tv/myIPTV/ipv4.m3u
 https://www.iyouhun.com/tv/myIPTV/ipv6.m3u
 https://xxx.com/subscribe.m3u
