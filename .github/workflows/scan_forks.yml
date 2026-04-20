@@ -15,7 +15,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 1
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run scan script
+      - name: Run scan
         env:
           YONU: ${{ secrets.YONU }}
         run: python scan_forks.py
@@ -34,11 +33,6 @@ jobs:
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-
-          # 只添加你这三个文件，不存在也不报错
-          git add projects.txt urls.txt config/subscribe.txt || true
-
-          # 重点：无论内容变不变，都强制提交一次
-          git commit -m "Auto update $(date +'%Y-%m-%d %H:%M:%S')" --allow-empty
-
+          git add projects.txt urls.txt
+          git commit -m "Update $(date +'%Y-%m-%d %H:%M:%S')" --allow-empty
           git push
