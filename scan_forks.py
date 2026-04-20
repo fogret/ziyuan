@@ -108,30 +108,31 @@ def push_to_target_repo(final_urls, now_str):
                 with open(file_path, "r", encoding="utf-8") as f:
                     lines = [line.rstrip("\n") for line in f]
 
-            # 分离：顶部注释 + 旧更新时间 + 旧链接 + 底部其他内容
-            header_end = 0
-            # 找到最后一行非链接注释（保留原有头部）
+            # 前5行原样保留
+            header = lines[:5]
+
+            # 白名单部分原样保留
+            whitelist = []
             for i, line in enumerate(lines):
-                if line.startswith("http"):
-                    header_end = i
+                if line.strip() == "[WHITELIST]":
+                    whitelist = lines[i:]
                     break
-            else:
-                header_end = len(lines)
 
-            header = []
-            # 保留原有头部，只替换更新时间
-            for line in lines[:header_end]:
-                if not line.strip().startswith("# 更新时间："):
-                    header.append(line)
-            # 加入最新时间
-            header.append(f"# 更新时间：{now_str}（北京时间）")
+            # 第6行开始：更新时间 + 最新链接
+            insert_part = [
+                f"# 更新时间：{now_str}（北京时间）",
+                *final_urls,
+                ""  # 空一行，隔开链接与白名单
+            ]
 
-            # 拼接最终内容：头部 + 新链接
-            new_lines = header + final_urls
+            # 组合最终内容
+            new_lines = header + insert_part + whitelist
 
+            # 写入文件
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(new_lines) + "\n")
 
+            # Git 提交
             subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
             subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
             subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
@@ -196,7 +197,7 @@ def main():
 
     print("✅ 当前仓库已生成 projects.txt、urls.txt")
 
-    # 推送到目标仓库
+    # 推送到另一个仓库
     if final_urls:
         push_to_target_repo(final_urls, now_str)
     else:
