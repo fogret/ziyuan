@@ -1,6 +1,8 @@
 import requests
 import re
 import os
+import subprocess
+import tempfile
 from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -15,6 +17,11 @@ HEADERS = {
     "User-Agent": "iptv-fork-scan",
     "Authorization": f"Bearer {TOKEN}"
 }
+
+# 目标仓库（推送到这里）
+TARGET_OWNER = "fogret"
+TARGET_REPO = "sourt"
+TARGET_FILE_PATH = "config/subscribe.txt"
 
 DAYS = 7
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
@@ -83,6 +90,69 @@ def test_url(url):
     except:
         return False
 
+# ===================== 推送到目标仓库 =====================
+def push_to_target_repo(final_urls, now_str):
+    try:
+        repo_url = f"https://{TOKEN}@github.com/{TARGET_OWNER}/{TARGET_REPO}.git"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run(["git", "clone", repo_url, tmpdir], check=True, capture_output=True)
+            os.chdir(tmpdir)
+
+            os.makedirs("config", exist_ok=True)
+            file_path = TARGET_FILE_PATH
+
+            header = []
+            whitelist = []
+
+            # 保留原有格式
+            if os.path.exists(file_path):
+                with open(file_path, "r", encoding="utf-8") as f:
+                    lines = f.read().splitlines(keepends=False)
+
+                idx = None
+                for i, line in enumerate(lines):
+                    if line.strip() == "[WHITELIST]":
+                        idx = i
+                        break
+                if idx is not None:
+                    header = lines[:idx]
+                    whitelist = lines[idx:]
+                else:
+                    header = lines
+            else:
+                header = [
+                    "# 这是订阅源列表，每行一个订阅地址",
+                    "# 支持设置UA：https://xxx.com/subscribe.m3u UA=\"xxx\"",
+                    "# This is a list of subscription sources, with one subscription address per line",
+                    "# Supports setting UA: https://xxx.com/subscribe.m3u UA=\"xxx\"",
+                    ""
+                ]
+                whitelist = [
+                    "",
+                    "[WHITELIST]",
+                    "# 以下是订阅源的白名单",
+                    "# This is the whitelist"
+                ]
+
+            # 写入北京时间更新时间 + urls.txt 的内容
+            time_line = f"# 更新时间：{now_str}（北京时间）"
+            new_content = "\n".join(header).rstrip() + "\n" + time_line + "\n" + "\n".join(final_urls) + "\n" + "\n".join(whitelist)
+
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(new_content.strip() + "\n")
+
+            # Git 提交
+            subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+            subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
+            subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
+            subprocess.run(["git", "commit", "-m", "Auto update subscribe.txt"], check=True)
+            subprocess.run(["git", "push", "origin", "HEAD"], check=True)
+
+        print("✅ 推送成功：fogret/sourt/config/subscribe.txt")
+    except Exception as e:
+        print(f"❌ 推送失败：{e}")
+
 # ===================== 主函数 =====================
 def main():
     beijing_tz = timezone(timedelta(hours=8))
@@ -124,18 +194,25 @@ def main():
     final_urls = sorted(set(final_urls))
     print(f"可用链接：{len(final_urls)}")
 
-    # 写入当前仓库根目录文件
+    # ===================== 写入当前仓库 =====================
     with open("projects.txt", "w", encoding="utf-8") as f:
-        f.write(f"# 更新时间：{now_str}\n")
+        f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for fk in valid_forks:
             f.write(f"https://github.com/{fk}\n")
 
     with open("urls.txt", "w", encoding="utf-8") as f:
-        f.write(f"# 更新时间：{now_str}\n")
+        f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for u in final_urls:
             f.write(u + "\n")
 
     print("✅ 当前仓库已生成 projects.txt、urls.txt")
+
+    # ===================== 推送到另一个仓库 =====================
+    if final_urls:
+        push_to_target_repo(final_urls, now_str)
+    else:
+        print("⚠️ 无可用链接")
+
     print("=== 完成 ===")
 
 if __name__ == "__main__":
