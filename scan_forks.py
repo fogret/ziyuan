@@ -18,7 +18,7 @@ HEADERS = {
     "Authorization": f"Bearer {TOKEN}"
 }
 
-# 目标仓库（推送到这里）
+# 目标仓库
 TARGET_OWNER = "fogret"
 TARGET_REPO = "sourt"
 TARGET_FILE_PATH = "config/subscribe.txt"
@@ -102,17 +102,40 @@ def push_to_target_repo(final_urls, now_str):
             os.makedirs("config", exist_ok=True)
             file_path = TARGET_FILE_PATH
 
-            # 全新覆盖写入：更新时间 + 链接，不保留任何旧内容
-            new_content = f"# 更新时间：{now_str}（北京时间）\n"
-            new_content += "\n".join(final_urls)
+            # 读取原有内容
+            lines = []
+            if os.path.exists(file_path):
+                with open(file_path, "r", encoding="utf-8") as f:
+                    lines = [line.rstrip("\n") for line in f]
+
+            # 分离：顶部注释 + 旧更新时间 + 旧链接 + 底部其他内容
+            header_end = 0
+            # 找到最后一行非链接注释（保留原有头部）
+            for i, line in enumerate(lines):
+                if line.startswith("http"):
+                    header_end = i
+                    break
+            else:
+                header_end = len(lines)
+
+            header = []
+            # 保留原有头部，只替换更新时间
+            for line in lines[:header_end]:
+                if not line.strip().startswith("# 更新时间："):
+                    header.append(line)
+            # 加入最新时间
+            header.append(f"# 更新时间：{now_str}（北京时间）")
+
+            # 拼接最终内容：头部 + 新链接
+            new_lines = header + final_urls
 
             with open(file_path, "w", encoding="utf-8") as f:
-                f.write(new_content.strip() + "\n")
+                f.write("\n".join(new_lines) + "\n")
 
             subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
             subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
             subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
-            subprocess.run(["git", "commit", "-m", "Update " + now_str], check=True)
+            subprocess.run(["git", "commit", "-m", "Auto update"], check=True)
             subprocess.run(["git", "push", "origin", "HEAD"], check=True)
 
         print("✅ 推送成功：fogret/sourt/config/subscribe.txt")
@@ -160,7 +183,7 @@ def main():
     final_urls = sorted(set(final_urls))
     print(f"可用链接：{len(final_urls)}")
 
-    # ===================== 写入当前仓库 =====================
+    # 写入当前仓库
     with open("projects.txt", "w", encoding="utf-8") as f:
         f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for fk in valid_forks:
@@ -173,7 +196,7 @@ def main():
 
     print("✅ 当前仓库已生成 projects.txt、urls.txt")
 
-    # ===================== 推送到另一个仓库 =====================
+    # 推送到目标仓库
     if final_urls:
         push_to_target_repo(final_urls, now_str)
     else:
