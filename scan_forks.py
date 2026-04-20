@@ -102,51 +102,17 @@ def push_to_target_repo(final_urls, now_str):
             os.makedirs("config", exist_ok=True)
             file_path = TARGET_FILE_PATH
 
-            header = []
-            whitelist = []
-
-            # 保留原有格式
-            if os.path.exists(file_path):
-                with open(file_path, "r", encoding="utf-8") as f:
-                    lines = f.read().splitlines(keepends=False)
-
-                idx = None
-                for i, line in enumerate(lines):
-                    if line.strip() == "[WHITELIST]":
-                        idx = i
-                        break
-                if idx is not None:
-                    header = lines[:idx]
-                    whitelist = lines[idx:]
-                else:
-                    header = lines
-            else:
-                header = [
-                    "# 这是订阅源列表，每行一个订阅地址",
-                    "# 支持设置UA：https://xxx.com/subscribe.m3u UA=\"xxx\"",
-                    "# This is a list of subscription sources, with one subscription address per line",
-                    "# Supports setting UA: https://xxx.com/subscribe.m3u UA=\"xxx\"",
-                    ""
-                ]
-                whitelist = [
-                    "",
-                    "[WHITELIST]",
-                    "# 以下是订阅源的白名单",
-                    "# This is the whitelist"
-                ]
-
-            # 写入北京时间更新时间 + urls.txt 的内容
-            time_line = f"# 更新时间：{now_str}（北京时间）"
-            new_content = "\n".join(header).rstrip() + "\n" + time_line + "\n" + "\n".join(final_urls) + "\n" + "\n".join(whitelist)
+            # 全新覆盖写入：更新时间 + 链接，不保留任何旧内容
+            new_content = f"# 更新时间：{now_str}（北京时间）\n"
+            new_content += "\n".join(final_urls)
 
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(new_content.strip() + "\n")
 
-            # Git 提交
             subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
             subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
             subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
-            subprocess.run(["git", "commit", "-m", "Auto update subscribe.txt"], check=True)
+            subprocess.run(["git", "commit", "-m", "Update " + now_str], check=True)
             subprocess.run(["git", "push", "origin", "HEAD"], check=True)
 
         print("✅ 推送成功：fogret/sourt/config/subscribe.txt")
