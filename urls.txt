@@ -1,4 +1,4 @@
-# 更新时间：2026-04-22 16:14:07（北京时间）
+# 更新时间：2026-04-22 19:14:54（北京时间）
 http://1.94.31.214/live/live9/dgtv.txt
 http://1.94.31.214/live/livelite.txt
 http://117.72.68.25:9230/latest.txt
@@ -22,7 +22,6 @@ http://raw.githubusercontent.com/develop202/migu_video/refs/heads/main/interface
 http://tv.850930.xyz/gather.m3u
 http://wangziduoqing.com/yuan/zb.txt
 http://west.shaonv.me/tvbox/live.txt
-http://www.52top.com.cn:678/downloads/migu.txt
 http://xhztv.top/new.txt
 http://xhztv.top/xhz/live.txt
 https://16453.kstore.space/%E7%9B%B4%E6%92%AD%E6%BA%90/%E5%B9%BF%E8%A5%BF%E7%A7%BB%E5%8A%A81.txt
@@ -330,7 +329,6 @@ https://live.fanmingming.cn/tv/m3u/ipv6.m3u
 https://live.fanmingming.com/tv/m3u/index.m3u
 https://live.fanmingming.com/tv/m3u/ipv6.m3u
 https://live.freetv.top/douyuyqk.m3u
-https://live.freetv.top/huyayqk.m3u
 https://live.hacks.tools/tv/iptv4.txt
 https://live.hacks.tools/tv/iptv6.txt
 https://live.hacks.tools/tv/ipv4/categories/卫视频道.txt
@@ -679,6 +677,7 @@ https://raw.githubusercontent.com/zwc456baby/iptv_alive/refs/heads/master/live.t
 https://raw.githubusercontent.com/zxmlxw520/5566/refs/heads/main/cjdszb.txt
 https://raw.githubusercontent.com/zxmlxw520/5566/refs/heads/main/gqds+.txt
 https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u
+https://raw.githubusercontent.com/zzgpy1/iptv-sources/gh-pages/txt/cymz6_lives.txt
 https://raw.githubusercontent.com/zzmaze/iptv/main/itvlist.txt
 https://raw.githubuserontent.com/YanG-1989/m3u/main/Gather.m3u
 https://stiptv01.cc.cd/txt/youhun.txt
@@ -712,7 +711,6 @@ https://tv.850930.xyz/pix.m3u
 https://tvv.tw/github.com/fafa002/yf2025/blob/main/yiyifafa.txt
 https://tzdr.com/iptv.txt
 https://www.3kjs.com/tv.txt
-https://www.goodiptv.club/bililive.m3u
 https://www.goodiptv.club/yylunbo.m3u?url=https://lunbo.freetv.top
 https://www.iyouhun.com/tv/myIPTV/ipv4.m3u
 https://www.iyouhun.com/tv/myIPTV/ipv6.m3u
