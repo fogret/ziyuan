@@ -1,4 +1,4 @@
-# 更新时间：2026-04-22 19:14:54（北京时间）
+# 更新时间：2026-04-22 23:49:41（北京时间）
 https://github.com/fanjunjia/iptv-api
 https://github.com/sjl-beep/iptv-api
 https://github.com/youthpc-yjj/iptv-api
@@ -31,7 +31,6 @@ https://github.com/pp2221/Guoviniptv-api
 https://github.com/hf-studio/iptv-api
 https://github.com/9527sky/iptv-api
 https://github.com/wxnlq/iptv-api
-https://github.com/web3-ops/iptv-api
 https://github.com/DFHIPTVAPI/Zh-iptv-api
 https://github.com/SnapeLiu/iptv-api
 https://github.com/hnqslg/iptv-api
@@ -525,6 +524,7 @@ https://github.com/ToneDee/iptv-api
 https://github.com/2016Sun/iptv-api
 https://github.com/leonis999/iptv-api
 https://github.com/shawmsean/iptv-api
+https://github.com/bain66888/iptv-api
 https://github.com/harrize/iptv-api
 https://github.com/freamanNJ/iptv-api
 https://github.com/zhuhengbj-ctrl/iptv-api
@@ -838,7 +838,6 @@ https://github.com/shugang151/iptv-api
 https://github.com/m2kall/iptv-api
 https://github.com/shi24long/iptv-api
 https://github.com/gaoleilei1994/iptv-api
-https://github.com/boytemp1/it-api
 https://github.com/gdf6913/iptv-api
 https://github.com/gracelzq/iptv-api
 https://github.com/shuaiterry/iptv-api
@@ -1195,7 +1194,6 @@ https://github.com/yy990318190/iptv-api
 https://github.com/zg4321/zg
 https://github.com/guancn/TV
 https://github.com/250992941/TV
-https://github.com/Jackie264/iptv-api
 https://github.com/GutsGo/TV
 https://github.com/myyfan/iptv-api
 https://github.com/toringzhang/TV
