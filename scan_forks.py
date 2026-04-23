@@ -27,6 +27,16 @@ DAYS = 7
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
+# 代理清洗正则
+PROXY_CLEAN_PAT = re.compile(
+    r"^(https?://(ghfast\.top|ghproxy\.[^/]+|cdn\.jsdelivr\.net/gh|fastly\.jsdelivr\.net/gh)/)+",
+    re.IGNORECASE
+)
+
+def clean_github_proxy(url: str) -> str:
+    """剥离GH代理前缀，返回原生链接"""
+    return PROXY_CLEAN_PAT.sub("", url.strip())
+
 def is_valid_stream(url):
     url = url.lower()
     deny_exts = [
@@ -74,7 +84,14 @@ def fetch_subscribe(full_name):
 
 def extract_urls(text):
     urls = URL_PATTERN.findall(text)
-    return list(set(u.strip() for u in urls))
+    unique_map = {}
+    for u in urls:
+        raw_link = u.strip()
+        real_link = clean_github_proxy(raw_link)
+        # 按原生链接去重，最终存干净无代理地址
+        if real_link not in unique_map:
+            unique_map[real_link] = real_link
+    return list(unique_map.values())
 
 def test_url(url):
     try:
@@ -118,11 +135,11 @@ def push_to_target_repo(final_urls, now_str):
                     whitelist = lines[i:]
                     break
 
-            # 第6行开始：更新时间 + 最新链接
+            # 第6行开始：更新时间 + 最新干净链接
             insert_part = [
                 f"# 更新时间：{now_str}（北京时间）",
                 *final_urls,
-                ""  # 空一行，隔开链接与白名单
+                ""
             ]
 
             # 组合最终内容
@@ -168,7 +185,7 @@ def main():
             if is_valid_stream(u):
                 all_urls[u] = full_name
 
-    print(f"提取URL数：{len(all_urls)}")
+    print(f"提取URL数（去代理后）：{len(all_urls)}")
     final_urls = []
 
     with ThreadPoolExecutor(max_workers=10) as executor:
