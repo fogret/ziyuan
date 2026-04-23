@@ -28,26 +28,18 @@ TARGET_OWNER = "fogret"
 TARGET_REPO = "sourt"
 TARGET_FILE_PATH = "config/subscribe.txt"
 
-DAYS = 30
+# 最近 7 天
+DAYS = 7
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
-URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
+
+# 只匹配：http://IP:端口/rtp/组播IP:端口
+RTP_URL_PATTERN = re.compile(
+    r'http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\d+\.\d+\.\d+\.\d+:\d+',
+    re.IGNORECASE
+)
 
 def is_valid_stream(url):
-    url = url.lower()
-    deny_exts = [
-        ".m3u8", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
-        ".php", ".html", ".htm", ".json", ".xml",
-        ".zip", ".rar", ".7z", ".tar", ".gz",
-        ".mp4", ".flv", ".ts"
-    ]
-    allow_exts = [".m3u", ".txt"]
-    for ext in deny_exts:
-        if ext in url:
-            return False
-    for ext in allow_exts:
-        if ext in url:
-            return True
-    return False
+    return bool(RTP_URL_PATTERN.fullmatch(url.strip()))
 
 def get_forks():
     log("【日志】开始获取 forks...")
@@ -68,10 +60,9 @@ def get_forks():
     log(f"【日志】获取 forks 完成，总数：{len(forks)}")
     return forks
 
-def has_daily_commits_for_30_days(full_name):
-    log(f"【日志】正在检查 30 天更新：{full_name}")
+def has_commits_in_7_days(full_name):
+    log(f"【日志】检查 7 天内更新：{full_name}")
     try:
-        now = datetime.utcnow()
         day_set = set()
 
         for page in range(1, 5):
@@ -91,11 +82,12 @@ def has_daily_commits_for_30_days(full_name):
                 day_key = dt.strftime("%Y-%m-%d")
                 day_set.add(day_key)
 
-            if len(day_set) >= DAYS:
+            # 只要 7 天内至少有 1 天更新就算有效
+            if len(day_set) >= 1:
                 break
 
-        ok = len(day_set) >= DAYS
-        log(f"【日志】{full_name} 30 天更新天数：{len(day_set)} → {'符合' if ok else '不符合'}")
+        ok = len(day_set) >= 1
+        log(f"【日志】{full_name} 7 天内更新天数：{len(day_set)} → {'符合' if ok else '不符合'}")
         return ok
     except Exception as e:
         log(f"【日志】{full_name} 检查出错：{e}")
@@ -117,9 +109,9 @@ def fetch_subscribe(full_name):
         return None
 
 def extract_urls(text):
-    urls = URL_PATTERN.findall(text)
+    urls = RTP_URL_PATTERN.findall(text)
     res = list(set(u.strip() for u in urls))
-    log(f"【日志】提取到链接数：{len(res)}")
+    log(f"【日志】提取到符合格式链接数：{len(res)}")
     return res
 
 def test_url(url):
@@ -200,7 +192,7 @@ def main():
         full_name = f["full_name"]
         log(f"\n【日志】处理第 {idx+1}/{len(forks)} 个 fork：{full_name}")
 
-        if not has_daily_commits_for_30_days(full_name):
+        if not has_commits_in_7_days(full_name):
             continue
 
         valid_forks.append(full_name)
@@ -212,7 +204,7 @@ def main():
             if is_valid_stream(u):
                 all_urls[u] = full_name
 
-    log(f"\n【日志】符合 30 天每日更新的仓库：{len(valid_forks)}")
+    log(f"\n【日志】符合 7 天内更新的仓库：{len(valid_forks)}")
     log(f"【日志】待测速链接总数：{len(all_urls)}")
 
     final_urls = []
