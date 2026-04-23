@@ -23,7 +23,7 @@ TARGET_OWNER = "fogret"
 TARGET_REPO = "sourt"
 TARGET_FILE_PATH = "config/subscribe.txt"
 
-DAYS = 7
+DAYS = 30  # 改为30天
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
@@ -60,9 +60,36 @@ def get_forks():
         page += 1
     return forks
 
-def fork_recent(fork):
-    update_date = datetime.strptime(fork["updated_at"], "%Y-%m-%dT%H:%M:%SZ")
-    return update_date >= cutoff_date
+# ===================== 新版：检查30天内每天都有提交 =====================
+def has_daily_commits_for_30_days(full_name):
+    try:
+        now = datetime.utcnow()
+        day_set = set()
+
+        for page in range(1, 5):  # 最多查几页，避免API超限
+            url = f"{API}/repos/{full_name}/commits?per_page=100&page={page}"
+            r = requests.get(url, headers=HEADERS, timeout=5)
+            if r.status_code != 200:
+                break
+            commits = r.json()
+            if not commits:
+                break
+
+            for cm in commits:
+                date_str = cm["commit"]["author"]["date"]
+                dt = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
+                if dt < cutoff_date:
+                    continue
+                day_key = dt.strftime("%Y-%m-%d")
+                day_set.add(day_key)
+
+            # 提前满足就退出
+            if len(day_set) >= DAYS:
+                break
+
+        return len(day_set) >= DAYS
+    except Exception as e:
+        return False
 
 def fetch_subscribe(full_name):
     raw_url = f"https://raw.githubusercontent.com/{full_name}/master/config/subscribe.txt"
@@ -148,7 +175,7 @@ def main():
     beijing_tz = timezone(timedelta(hours=8))
     now_str = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    print("=== 开始扫描fork ===")
+    print("=== 开始扫描fork（30天每日更新）===")
     forks = get_forks()
     print(f"总fork数：{len(forks)}")
 
@@ -157,8 +184,11 @@ def main():
 
     for f in forks:
         full_name = f["full_name"]
-        if not fork_recent(f):
+
+        # 新版：检查是否连续30天都有提交
+        if not has_daily_commits_for_30_days(full_name):
             continue
+
         valid_forks.append(full_name)
         text = fetch_subscribe(full_name)
         if not text:
@@ -168,6 +198,7 @@ def main():
             if is_valid_stream(u):
                 all_urls[u] = full_name
 
+    print(f"符合30天每日更新的fork：{len(valid_forks)}")
     print(f"提取URL数：{len(all_urls)}")
     final_urls = []
 
