@@ -5,6 +5,10 @@ import subprocess
 import tempfile
 from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import sys
+
+# 强制实时输出日志
+print = lambda *args, **kwargs: __builtins__['print'](*args, **kwargs, flush=True)
 
 # ===================== 配置 =====================
 OWNER = "Guovin"
@@ -23,7 +27,7 @@ TARGET_OWNER = "fogret"
 TARGET_REPO = "sourt"
 TARGET_FILE_PATH = "config/subscribe.txt"
 
-DAYS = 30  # 改为30天
+DAYS = 30
 cutoff_date = datetime.utcnow() - timedelta(days=DAYS)
 URL_PATTERN = re.compile(r'https?://[^\s"\'<>]+')
 
@@ -45,28 +49,31 @@ def is_valid_stream(url):
     return False
 
 def get_forks():
+    print("【日志】开始获取 forks...")
     forks = []
     page = 1
     while True:
         url = f"{API}/repos/{OWNER}/{REPO}/forks?per_page=100&page={page}"
         r = requests.get(url, headers=HEADERS)
         if r.status_code != 200:
-            print("获取forks失败：", r.text)
+            print("【日志】获取forks失败：", r.text)
             break
         data = r.json()
         if not data:
             break
         forks.extend(data)
+        print(f"【日志】已获取第 {page} 页，当前总数：{len(forks)}")
         page += 1
+    print(f"【日志】获取 forks 完成，总数：{len(forks)}")
     return forks
 
-# ===================== 新版：检查30天内每天都有提交 =====================
 def has_daily_commits_for_30_days(full_name):
+    print(f"【日志】正在检查 30 天更新：{full_name}")
     try:
         now = datetime.utcnow()
         day_set = set()
 
-        for page in range(1, 5):  # 最多查几页，避免API超限
+        for page in range(1, 5):
             url = f"{API}/repos/{full_name}/commits?per_page=100&page={page}"
             r = requests.get(url, headers=HEADERS, timeout=5)
             if r.status_code != 200:
@@ -83,25 +90,36 @@ def has_daily_commits_for_30_days(full_name):
                 day_key = dt.strftime("%Y-%m-%d")
                 day_set.add(day_key)
 
-            # 提前满足就退出
             if len(day_set) >= DAYS:
                 break
 
-        return len(day_set) >= DAYS
+        ok = len(day_set) >= DAYS
+        print(f"【日志】{full_name} 30 天更新天数：{len(day_set)} → {'符合' if ok else '不符合'}")
+        return ok
     except Exception as e:
+        print(f"【日志】{full_name} 检查出错：{e}")
         return False
 
 def fetch_subscribe(full_name):
+    print(f"【日志】拉取 subscribe.txt：{full_name}")
     raw_url = f"https://raw.githubusercontent.com/{full_name}/master/config/subscribe.txt"
     try:
         r = requests.get(raw_url, timeout=3)
-        return r.text if r.status_code == 200 else None
-    except:
+        if r.status_code == 200:
+            print(f"【日志】拉取成功：{raw_url}")
+            return r.text
+        else:
+            print(f"【日志】拉取失败 {r.status_code}：{raw_url}")
+            return None
+    except Exception as e:
+        print(f"【日志】拉取异常：{e}")
         return None
 
 def extract_urls(text):
     urls = URL_PATTERN.findall(text)
-    return list(set(u.strip() for u in urls))
+    res = list(set(u.strip() for u in urls))
+    print(f"【日志】提取到链接数：{len(res)}")
+    return res
 
 def test_url(url):
     try:
@@ -119,47 +137,41 @@ def test_url(url):
 
 # ===================== 推送到目标仓库 =====================
 def push_to_target_repo(final_urls, now_str):
+    print("【日志】开始推送至目标仓库")
     try:
         repo_url = f"https://{TOKEN}@github.com/{TARGET_OWNER}/{TARGET_REPO}.git"
 
         with tempfile.TemporaryDirectory() as tmpdir:
             subprocess.run(["git", "clone", repo_url, tmpdir], check=True, capture_output=True)
             os.chdir(tmpdir)
+            print("【日志】克隆仓库完成")
 
             os.makedirs("config", exist_ok=True)
             file_path = TARGET_FILE_PATH
 
-            # 读取原有内容
             lines = []
             if os.path.exists(file_path):
                 with open(file_path, "r", encoding="utf-8") as f:
                     lines = [line.rstrip("\n") for line in f]
 
-            # 前5行原样保留
             header = lines[:5]
-
-            # 白名单部分原样保留
             whitelist = []
             for i, line in enumerate(lines):
                 if line.strip() == "[WHITELIST]":
                     whitelist = lines[i:]
                     break
 
-            # 第6行开始：更新时间 + 最新链接
             insert_part = [
                 f"# 更新时间：{now_str}（北京时间）",
                 *final_urls,
-                ""  # 空一行，隔开链接与白名单
+                ""
             ]
-
-            # 组合最终内容
             new_lines = header + insert_part + whitelist
 
-            # 写入文件
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(new_lines) + "\n")
+            print("【日志】文件写入完成")
 
-            # Git 提交
             subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
             subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
             subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
@@ -175,17 +187,18 @@ def main():
     beijing_tz = timezone(timedelta(hours=8))
     now_str = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    print("=== 开始扫描fork（30天每日更新）===")
+    print("\n========== 【日志】开始运行扫描任务 ==========")
+
     forks = get_forks()
-    print(f"总fork数：{len(forks)}")
+    print(f"【日志】总 forks：{len(forks)}")
 
     valid_forks = []
     all_urls = {}
 
-    for f in forks:
+    for idx, f in enumerate(forks):
         full_name = f["full_name"]
+        print(f"\n【日志】处理第 {idx+1}/{len(forks)} 个 fork：{full_name}")
 
-        # 新版：检查是否连续30天都有提交
         if not has_daily_commits_for_30_days(full_name):
             continue
 
@@ -198,24 +211,29 @@ def main():
             if is_valid_stream(u):
                 all_urls[u] = full_name
 
-    print(f"符合30天每日更新的fork：{len(valid_forks)}")
-    print(f"提取URL数：{len(all_urls)}")
-    final_urls = []
+    print(f"\n【日志】符合 30 天每日更新的仓库：{len(valid_forks)}")
+    print(f"【日志】待测速链接总数：{len(all_urls)}")
 
+    final_urls = []
+    urls = list(all_urls.keys())
+    total = len(urls)
+
+    print("\n【日志】开始测速...")
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_url = {executor.submit(test_url, url): url for url in all_urls}
-        for future in as_completed(future_to_url):
+        for i, future in enumerate(as_completed(future_to_url)):
             url = future_to_url[future]
             try:
-                if future.result():
+                ok = future.result()
+                print(f"【日志】测速进度 {i+1}/{total} | {url} → {'可用' if ok else '不可用'}")
+                if ok:
                     final_urls.append(url)
-            except:
-                pass
+            except Exception as e:
+                print(f"【日志】测速失败 {url}：{e}")
 
     final_urls = sorted(set(final_urls))
-    print(f"可用链接：{len(final_urls)}")
+    print(f"\n【日志】测速完成，最终可用链接：{len(final_urls)}")
 
-    # 写入当前仓库
     with open("projects.txt", "w", encoding="utf-8") as f:
         f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for fk in valid_forks:
@@ -226,15 +244,14 @@ def main():
         for u in final_urls:
             f.write(u + "\n")
 
-    print("✅ 当前仓库已生成 projects.txt、urls.txt")
+    print("【日志】当前文件已生成：projects.txt、urls.txt")
 
-    # 推送到另一个仓库
     if final_urls:
         push_to_target_repo(final_urls, now_str)
     else:
-        print("⚠️ 无可用链接")
+        print("【日志】无可用链接，跳过推送")
 
-    print("=== 完成 ===")
+    print("\n========== 【日志】任务完成 ==========")
 
 if __name__ == "__main__":
     main()
