@@ -3,7 +3,9 @@ import re
 import os
 import subprocess
 import tempfile
+from urllib.parse import urlparse
 from datetime import datetime, timedelta, timezone
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ===================== 配置 =====================
@@ -33,48 +35,73 @@ PROXY_CLEAN_PAT = re.compile(
     re.IGNORECASE
 )
 
-# 匹配同目录同名 m3u / txt 成对重复
-DUPLICATE_PAIR_PAT = re.compile(r"(.+?)(\.m3u|\.txt)$", re.IGNORECASE)
-
 def clean_github_proxy(url: str) -> str:
     """剥离GH代理前缀，返回原生链接"""
     return PROXY_CLEAN_PAT.sub("", url.strip())
 
-def deduplicate_m3u_txt(url_list):
-    """
-    同目录同名 m3u / txt 去重择优
-    规则：
-    1. 基础路径一致 + 仅后缀 m3u/txt 视为重复项
-    2. 优先保留 .m3u (内容更全、通用)
-    3. 无m3u仅保留txt
-    """
-    group_map = {}
-    for url in url_list:
-        base_match = DUPLICATE_PAIR_PAT.match(url)
-        if not base_match:
-            # 非m3u/txt后缀，直接保留
-            group_map[url] = {"m3u": [], "txt": [], "other": [url]}
+def get_channel_name_set(text):
+    """提取纯净频道名集合，用于对比是否重复"""
+    channel_set = set()
+    if not text:
+        return channel_set
+    for line in text.splitlines():
+        s = line.strip()
+        if not s or s.startswith(("#", "http", "https")):
             continue
-        base_key = base_match.group(1).lower()
-        suffix = base_match.group(2).lower()
-        if base_key not in group_map:
-            group_map[base_key] = {"m3u": [], "txt": [], "other": []}
-        if suffix == ".m3u":
-            group_map[base_key]["m3u"].append(url)
-        elif suffix == ".txt":
-            group_map[base_key]["txt"].append(url)
+        if "," in s:
+            name = s.split(",")[0].strip()
+            if name:
+                channel_set.add(name)
+    return channel_set
+
+# ========== 整合所有去重：代理去重+完全URL去重+同域名频道重复去重 ==========
+def all_keep_unique(url_list):
+    # 1. 统一去除代理
+    clean_urls = [clean_github_proxy(u) for u in url_list]
+    # 2. 完全相同URL去重（保留原有）
+    unique_urls = list(dict.fromkeys(clean_urls))
+    # 3. 按域名/IP分组
+    host_group = defaultdict(list)
+    for link in unique_urls:
+        try:
+            host = urlparse(link).netloc.lower()
+        except:
+            host = "other"
+        host_group[host].append(link)
 
     final = []
-    for key, data in group_map.items():
-        if data["m3u"]:
-            # 优先保留m3u
-            final.append(data["m3u"][0])
-        elif data["txt"]:
-            # 无m3u再留txt
-            final.append(data["txt"][0])
-        final.extend(data["other"])
-    # 二次全局去重+排序
-    return sorted(list(set(final)))
+    # 同域名内：只删频道重复的，频道不同全部保留
+    for host, links in host_group.items():
+        if len(links) == 1:
+            final.append(links[0])
+            continue
+
+        temp = []
+        for link in links:
+            try:
+                res = requests.get(link, timeout=5)
+                if res.status_code != 200:
+                    continue
+                chs = get_channel_name_set(res.text)
+                if not chs:
+                    continue
+                # 对比已保留列表，频道重复才丢弃
+                repeat = False
+                for exist in temp:
+                    inter = chs & exist["chs"]
+                    union = chs | exist["chs"]
+                    if len(union) == 0:
+                        continue
+                    # 重合度过高判定为重复源
+                    if len(inter) / len(union) >= 0.7:
+                        repeat = True
+                        break
+                if not repeat:
+                    temp.append({"url": link, "chs": chs})
+            except:
+                continue
+        final.extend([item["url"] for item in temp])
+    return sorted(final)
 
 def is_valid_stream(url):
     url = url.lower()
@@ -126,10 +153,8 @@ def extract_urls(text):
     unique_map = {}
     for u in urls:
         raw_link = u.strip()
-        real_link = clean_github_proxy(raw_link)
-        # 按原生链接去重，最终存干净无代理地址
-        if real_link not in unique_map:
-            unique_map[real_link] = real_link
+        if raw_link not in unique_map:
+            unique_map[raw_link] = raw_link
     return list(unique_map.values())
 
 def test_url(url):
@@ -158,37 +183,29 @@ def push_to_target_repo(final_urls, now_str):
             os.makedirs("config", exist_ok=True)
             file_path = TARGET_FILE_PATH
 
-            # 读取原有内容
             lines = []
             if os.path.exists(file_path):
                 with open(file_path, "r", encoding="utf-8") as f:
                     lines = [line.rstrip("\n") for line in f]
 
-            # 前5行原样保留
             header = lines[:5]
-
-            # 白名单部分原样保留
             whitelist = []
             for i, line in enumerate(lines):
                 if line.strip() == "[WHITELIST]":
                     whitelist = lines[i:]
                     break
 
-            # 第6行开始：更新时间 + 最新干净链接
             insert_part = [
                 f"# 更新时间：{now_str}（北京时间）",
                 *final_urls,
                 ""
             ]
 
-            # 组合最终内容
             new_lines = header + insert_part + whitelist
 
-            # 写入文件
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(new_lines) + "\n")
 
-            # Git 提交
             subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
             subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
             subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
@@ -224,15 +241,14 @@ def main():
             if is_valid_stream(u):
                 all_urls[u] = full_name
 
-    print(f"提取URL数（去代理后）：{len(all_urls)}")
+    print(f"提取URL原始数量：{len(all_urls)}")
     url_list = list(all_urls.keys())
 
-    # 新增：m3u/txt成对去重择优
-    url_list = deduplicate_m3u_txt(url_list)
-    print(f"m3u/txt去重后URL数：{len(url_list)}")
+    # 统一入口：全部去重逻辑在这里，原有全部保留
+    url_list = all_keep_unique(url_list)
+    print(f"去代理+URL去重+同域名频道去重后：{len(url_list)}")
 
     final_urls = []
-
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_url = {executor.submit(test_url, url): url for url in url_list}
         for future in as_completed(future_to_url):
@@ -244,9 +260,9 @@ def main():
                 pass
 
     final_urls = sorted(set(final_urls))
-    print(f"可用链接：{len(final_urls)}")
+    print(f"最终可用链接数量：{len(final_urls)}")
 
-    # 写入当前仓库
+    # 写入本地文件
     with open("projects.txt", "w", encoding="utf-8") as f:
         f.write(f"# 更新时间：{now_str}（北京时间）\n")
         for fk in valid_forks:
@@ -257,15 +273,15 @@ def main():
         for u in final_urls:
             f.write(u + "\n")
 
-    print("✅ 当前仓库已生成 projects.txt、urls.txt")
+    print("✅ 已生成 projects.txt、urls.txt")
 
-    # 推送到另一个仓库
+    # 推送仓库
     if final_urls:
         push_to_target_repo(final_urls, now_str)
     else:
-        print("⚠️ 无可用链接")
+        print("⚠️ 无可用链接，跳过推送")
 
-    print("=== 完成 ===")
+    print("=== 执行完成 ===")
 
 if __name__ == "__main__":
     main()
