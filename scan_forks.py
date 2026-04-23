@@ -33,9 +33,48 @@ PROXY_CLEAN_PAT = re.compile(
     re.IGNORECASE
 )
 
+# 匹配同目录同名 m3u / txt 成对重复
+DUPLICATE_PAIR_PAT = re.compile(r"(.+?)(\.m3u|\.txt)$", re.IGNORECASE)
+
 def clean_github_proxy(url: str) -> str:
     """剥离GH代理前缀，返回原生链接"""
     return PROXY_CLEAN_PAT.sub("", url.strip())
+
+def deduplicate_m3u_txt(url_list):
+    """
+    同目录同名 m3u / txt 去重择优
+    规则：
+    1. 基础路径一致 + 仅后缀 m3u/txt 视为重复项
+    2. 优先保留 .m3u (内容更全、通用)
+    3. 无m3u仅保留txt
+    """
+    group_map = {}
+    for url in url_list:
+        base_match = DUPLICATE_PAIR_PAT.match(url)
+        if not base_match:
+            # 非m3u/txt后缀，直接保留
+            group_map[url] = {"m3u": [], "txt": [], "other": [url]}
+            continue
+        base_key = base_match.group(1).lower()
+        suffix = base_match.group(2).lower()
+        if base_key not in group_map:
+            group_map[base_key] = {"m3u": [], "txt": [], "other": []}
+        if suffix == ".m3u":
+            group_map[base_key]["m3u"].append(url)
+        elif suffix == ".txt":
+            group_map[base_key]["txt"].append(url)
+
+    final = []
+    for key, data in group_map.items():
+        if data["m3u"]:
+            # 优先保留m3u
+            final.append(data["m3u"][0])
+        elif data["txt"]:
+            # 无m3u再留txt
+            final.append(data["txt"][0])
+        final.extend(data["other"])
+    # 二次全局去重+排序
+    return sorted(list(set(final)))
 
 def is_valid_stream(url):
     url = url.lower()
@@ -186,10 +225,16 @@ def main():
                 all_urls[u] = full_name
 
     print(f"提取URL数（去代理后）：{len(all_urls)}")
+    url_list = list(all_urls.keys())
+
+    # 新增：m3u/txt成对去重择优
+    url_list = deduplicate_m3u_txt(url_list)
+    print(f"m3u/txt去重后URL数：{len(url_list)}")
+
     final_urls = []
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_url = {executor.submit(test_url, url): url for url in all_urls}
+        future_to_url = {executor.submit(test_url, url): url for url in url_list}
         for future in as_completed(future_to_url):
             url = future_to_url[future]
             try:
