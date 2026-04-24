@@ -1,55 +1,43 @@
 import re
 import os
-import logging
+import requests
 
-# 日志配置（GitHub Actions 友好）
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
-
-# 配置路径
+# 配置
 INPUT_PATH = "urls.txt"
 OUTPUT_PATH = "zhubo.txt"
 
-# 精准匹配你要的格式：http://ip:port/rtp/数字组播地址
-URL_PATTERN = re.compile(
-    r"http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\d+\.\d+\.\d+\.\d+:\d+",
-    re.IGNORECASE
-)
+# 匹配 http://ip:port/rtp/...
+pattern = re.compile(r"http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\d+\.\d+\.\d+\.\d+:\d+", re.I)
 
-unique_links = []
 seen = set()
 
-logging.info("【开始】提取公网 RTP 转发直播源")
+# 读取订阅列表
+with open(INPUT_PATH, "r", encoding="utf-8", errors="ignore") as f:
+    lines = [line.strip() for line in f if line.strip()]
 
-# 检查文件是否存在
-if not os.path.exists(INPUT_PATH):
-    logging.error(f"【失败】未找到 urls.txt 文件，请确认文件已上传")
-else:
-    logging.info(f"【读取】成功加载 urls.txt")
+print(f"=== 开始下载并提取 ===")
+print(f"订阅源数量：{len(lines)}")
 
-    # 读取内容
-    with open(INPUT_PATH, "r", encoding="utf-8", errors="ignore") as f:
-        content = f.read()
+# 逐个下载
+for url in lines:
+    try:
+        print(f"正在下载：{url}")
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        content = resp.text
 
-    # 匹配链接
-    raw_links = URL_PATTERN.findall(content)
-    logging.info(f"【匹配】原始匹配到链接：{len(raw_links)} 条")
+        # 提取
+        links = pattern.findall(content)
+        for link in links:
+            seen.add(link.strip())
+    except Exception as e:
+        print(f"下载失败：{url} | {e}")
 
-    # 去重
-    for link in raw_links:
-        link = link.strip()
-        if link and link not in seen:
-            seen.add(link)
-            unique_links.append(link)
-
-    logging.info(f"【去重】最终有效链接：{len(unique_links)} 条")
-
-# 写入文件
+# 保存
+final = sorted(seen)
 with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-    f.write("\n".join(unique_links))
+    f.write("\n".join(final))
 
-logging.info(f"【写入】已生成 {OUTPUT_PATH}")
-logging.info(f"【完成】RTP 源提取任务结束")
+print(f"=== 提取完成 ===")
+print(f"共提取有效 RTP 源：{len(final)} 条")
+print(f"已保存到：{OUTPUT_PATH}")
