@@ -19,12 +19,14 @@ jobs:
         run: pip install requests
 
       - name: Run extract_zhubo.py
+        env:
+          YONU: ${{ secrets.YONU }}
         run: python extract_zhubo.py
 
       - name: Commit & Push
         run: |
           git config --local user.name "github-actions"
           git config --local user.email "action@github.com"
-          git add zhubo.txt invalid.txt
-          git commit -m "Auto update zhubo & invalid" || exit 0
+          git add zhubo.txt invalid.txt config/whitelist.txt
+          git commit -m "Auto update zhubo & invalid & whitelist" || exit 0
           git push
