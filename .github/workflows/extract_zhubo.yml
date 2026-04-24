@@ -15,10 +15,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: 运行脚本，正常生成两个文件
+      - name: 安装依赖
+        run: pip install requests
+
+      - name: 运行脚本生成文件
         run: python extract_zhubo.py
 
-      - name: 仅推送 zhubo.txt 到目标仓库
+      - name: 推送 zhubo.txt 到目标仓库
         run: |
           git clone https://${{ secrets.YONU }}@github.com/fogret/sourt.git tmp_repo
           cd tmp_repo
