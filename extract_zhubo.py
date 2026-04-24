@@ -7,11 +7,11 @@ import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
-# ===================== 强制推送到另一个仓库 =====================
+# ===================== 配置 =====================
 TOKEN = os.getenv("YONU")
 TARGET_OWNER = "fogret"
 TARGET_REPO = "soute"
-TARGET_FILE = "config/whitelist.txt"
+TARGET_FILE_PATH = "config/whitelist.txt"
 
 # ===================== 本地配置 =====================
 INPUT_PATH = "data.txt"
@@ -97,37 +97,51 @@ with open(INVALID_PATH, "w", encoding="utf-8") as f:
         d = ip_data[ip]
         f.write(f"{ip},#{d['name']},{d['speed']:.2f}MB/s\n")
 
-# ===================== 真正写入另一个仓库 =====================
-def push_to_fogret_soute(ips):
+# ===================== 推送函数（用你原版结构，只改文件名） =====================
+def push_to_target_repo(final_urls, now_str):
     try:
         repo_url = f"https://{TOKEN}@github.com/{TARGET_OWNER}/{TARGET_REPO}.git"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run(["git", "clone", repo_url, tmpdir], capture_output=True)
+            subprocess.run(["git", "clone", repo_url, tmpdir], check=True, capture_output=True)
             os.chdir(tmpdir)
             os.makedirs("config", exist_ok=True)
+            file_path = TARGET_FILE_PATH
+            lines = []
+            if os.path.exists(file_path):
+                with open(file_path, "r", encoding="utf-8") as f:
+                    lines = [line.rstrip("\n") for line in f]
 
-            now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
-            content = [
-                "[KEYWORDS]",
+            # 保留 [KEYWORDS] 以上内容，下面全部覆盖
+            new_lines = []
+            for line in lines:
+                new_lines.append(line)
+                if line.strip() == "[KEYWORDS]":
+                    break
+
+            # 写入新内容
+            new_lines += [
                 "",
-                f"# 更新时间：{now}（北京时间）",
-                *ips
+                f"# 更新时间：{now_str}（北京时间）",
+                *final_urls,
+                ""
             ]
 
-            with open(TARGET_FILE, "w", encoding="utf-8") as f:
-                f.write("\n".join(content))
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(new_lines) + "\n")
 
-            subprocess.run(["git", "config", "user.name", "bot"])
-            subprocess.run(["git", "config", "user.email", "bot@github.com"])
-            subprocess.run(["git", "add", TARGET_FILE])
-            subprocess.run(["git", "commit", "-m", "Update whitelist"])
-            subprocess.run(["git", "push", "origin", "HEAD"])
-
-        print("✅ 成功写入另一个仓库 fogret/soute")
+            subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+            subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
+            subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
+            subprocess.run(["git", "commit", "-m", "Auto update whitelist"], check=True)
+            subprocess.run(["git", "push", "origin", "HEAD"], check=True)
     except Exception as e:
-        print("❌ 推送失败:", e)
+        print(f"推送失败：{e}")
 
+# ===================== 执行推送 =====================
 if sorted_list:
-    push_to_fogret_soute(sorted_list)
+    beijing_tz = timezone(timedelta(hours=8))
+    now_str = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
+    push_to_target_repo(sorted_list, now_str)
+    print("✅ 已推送到另一个仓库 fogret/soute")
 else:
-    print("无有效IP")
+    print("无有效IP，不推送")
