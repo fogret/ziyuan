@@ -13,5 +13,8 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install requests
+        run: pip install requests
+
       - name: Run extract_zhubo.py
         run: python extract_zhubo.py
