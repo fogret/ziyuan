@@ -6,38 +6,43 @@ import requests
 INPUT_PATH = "urls.txt"
 OUTPUT_PATH = "zhubo.txt"
 
-# 匹配 http://ip:port/rtp/...
-pattern = re.compile(r"http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\d+\.\d+\.\d+\.\d+:\d+", re.I)
+# 匹配规则
+pattern = re.compile(r"http[s]?://\d+\.\d+\.\d+\.\d+:\d+/rtp/\S+", re.I)
 
-seen = set()
+all_links = set()
 
-# 读取订阅列表
-with open(INPUT_PATH, "r", encoding="utf-8", errors="ignore") as f:
-    lines = [line.strip() for line in f if line.strip()]
+# 读取订阅地址
+try:
+    with open(INPUT_PATH, "r", encoding="utf-8", errors="ignore") as f:
+        urls = [line.strip() for line in f if line.strip()]
+except:
+    urls = []
 
-print(f"=== 开始下载并提取 ===")
-print(f"订阅源数量：{len(lines)}")
+print(f"订阅源数量：{len(urls)}")
 
-# 逐个下载
-for url in lines:
+# 遍历下载
+for u in urls:
     try:
-        print(f"正在下载：{url}")
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        content = resp.text
+        print(f"下载：{u}")
+        r = requests.get(u, timeout=15)
+        r.encoding = "utf-8"
+        content = r.text
 
         # 提取
         links = pattern.findall(content)
-        for link in links:
-            seen.add(link.strip())
+        for l in links:
+            ll = l.strip()
+            if ll:
+                all_links.add(ll)
     except Exception as e:
-        print(f"下载失败：{url} | {e}")
+        print(f"失败：{u} => {e}")
 
-# 保存
-final = sorted(seen)
+# 去重 + 排序
+final = sorted(all_links)
+
+# 写入根目录
 with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
     f.write("\n".join(final))
 
-print(f"=== 提取完成 ===")
-print(f"共提取有效 RTP 源：{len(final)} 条")
-print(f"已保存到：{OUTPUT_PATH}")
+print(f"提取完成：{len(final)} 条")
+print(f"已生成：{OUTPUT_PATH}")
