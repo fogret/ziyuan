@@ -1,0 +1,58 @@
+name: 提取主播源RTP
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - urls.txt
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 写入提取脚本
+        run: |
+          cat > extract_zhubo.py << 'EOF'
+          import re
+          import os
+
+          INPUT = "urls.txt"
+          OUTPUT = "zhubo.txt"
+
+          pattern = re.compile(r"http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\d+\.\d+\.\d+\.\d+:\d+", re.I)
+          seen = set()
+
+          if os.path.exists(INPUT):
+              with open(INPUT, "r", encoding="utf-8", errors="ignore") as f:
+                  content = f.read()
+
+              links = pattern.findall(content)
+              for link in links:
+                  link = link.strip()
+                  if link:
+                      seen.add(link)
+
+          with open(OUTPUT, "w", encoding="utf-8") as f:
+              f.write("\n".join(sorted(seen)))
+
+          print(f"提取完成，共 {len(seen)} 条")
+          EOF
+
+      - name: 运行提取
+        run: python extract_zhubo.py
+
+      - name: 上传结果
+        uses: actions/upload-artifact@v4
+        with:
+          name: zhubo
+          path: zhubo.txt
