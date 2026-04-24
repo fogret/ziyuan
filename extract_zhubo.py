@@ -7,63 +7,18 @@ import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
-# ===================== 推送配置 =====================
+# ===================== 目标仓库配置 =====================
 TOKEN = os.getenv("YONU")
 TARGET_OWNER = "fogret"
 TARGET_REPO = "soute"
 TARGET_FILE_PATH = "config/whitelist.txt"
 
-# ===================== 推送函数（覆盖旧数据） =====================
-def push_to_target_repo(final_ips, now_str):
-    try:
-        repo_url = f"https://{TOKEN}@github.com/{TARGET_OWNER}/{TARGET_REPO}.git"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run(["git", "clone", repo_url, tmpdir], check=True, capture_output=True)
-            os.chdir(tmpdir)
-            os.makedirs("config", exist_ok=True)
-            file_path = TARGET_FILE_PATH
-
-            lines = []
-            if os.path.exists(file_path):
-                with open(file_path, "r", encoding="utf-8") as f:
-                    lines = [line.rstrip("\n") for line in f]
-
-            # 保留 [KEYWORDS] 以上部分，下面全部覆盖
-            top_lines = []
-            found_keywords = False
-            for line in lines:
-                if line.strip() == "[KEYWORDS]":
-                    top_lines.append(line)
-                    found_keywords = True
-                    break
-                top_lines.append(line)
-
-            # 新内容：仅有效IP，按速度从高到低
-            new_lines = top_lines + [
-                "",
-                f"# 更新时间：{now_str}（北京时间）",
-                *final_ips,
-                ""
-            ]
-
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(new_lines) + "\n")
-
-            subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
-            subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
-            subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
-            subprocess.run(["git", "commit", "-m", "Auto update whitelist"], check=True)
-            subprocess.run(["git", "push", "origin", "HEAD"], check=True)
-
-        print("✅ 推送完成（已按速度排序并覆盖旧数据）")
-    except Exception as e:
-        print(f"❌ 推送失败：{e}")
-
-# ===================== 测速代码 =====================
+# ===================== 本地文件配置 =====================
 INPUT_PATH = "data.txt"
 OUTPUT_PATH = "zhubo.txt"
 INVALID_PATH = "invalid.txt"
 
+# ===================== 正则 =====================
 line_pattern = re.compile(r'(.+?),(http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\S+)', re.I | re.U)
 url_pattern = re.compile(r'http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\S+', re.I)
 ip_pattern = re.compile(r'http://(\d+\.\d+\.\d+\.\d+):\d+', re.I)
@@ -71,9 +26,11 @@ ip_pattern = re.compile(r'http://(\d+\.\d+\.\d+\.\d+):\d+', re.I)
 TIMEOUT = 8
 MAX_WORKERS = 80
 
+# ===================== 日志 =====================
 def log(msg):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
 
+# ===================== 测速 =====================
 def test_speed(url):
     try:
         start = time.time()
@@ -86,6 +43,7 @@ def test_speed(url):
     except:
         return url, 0.0, -1, False
 
+# ===================== 读取订阅 =====================
 items = []
 with open(INPUT_PATH, "r", encoding="utf-8", errors="ignore") as f:
     subs = [line.strip() for line in f if line.strip()]
@@ -109,6 +67,7 @@ for sub in subs:
     except Exception as e:
         log(f"下载失败：{sub}")
 
+# URL去重
 unique_items = []
 seen_url = set()
 for name, url in items:
@@ -116,6 +75,7 @@ for name, url in items:
         seen_url.add(url)
         unique_items.append((name, url))
 
+# ===================== 并发测速 =====================
 ip_data = {}
 valid_ips = set()
 
@@ -135,12 +95,12 @@ with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         if ok and speed > 0:
             valid_ips.add(ip)
 
-# ===================== 关键：按速度从高到低排序 =====================
-sorted_valid_ips = sorted(valid_ips, key=lambda ip: ip_data[ip]["speed"], reverse=True)
+# ===================== 按速度降序 =====================
+sorted_ips = sorted(valid_ips, key=lambda ip: ip_data[ip]["speed"], reverse=True)
 
-# 本地输出
+# ===================== 本地写入 =====================
 with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-    for ip in sorted_valid_ips:
+    for ip in sorted_ips:
         f.write(ip + "\n")
 
 with open(INVALID_PATH, "w", encoding="utf-8") as f:
@@ -149,13 +109,60 @@ with open(INVALID_PATH, "w", encoding="utf-8") as f:
         f.write(f"{ip},#{d['name']},{d['speed']:.2f}MB/s,{d['delay']}ms\n")
 
 log("="*60)
-log(f"完成！有效IP：{len(valid_ips)}，已按测速速度降序排列")
+log(f"本地完成：有效IP {len(sorted_ips)}")
 log("="*60)
 
-# ===================== 推送排序后的有效IP =====================
-if valid_ips:
-    tz = timezone(timedelta(hours=8))
-    now_str = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
-    push_to_target_repo(sorted_valid_ips, now_str)
+# ===================== 推送到另一个仓库：fogret/soute =====================
+def push_whitelist(ips):
+    try:
+        repo_url = f"https://{TOKEN}@github.com/{TARGET_OWNER}/{TARGET_REPO}.git"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run(["git", "clone", repo_url, tmpdir], check=True, capture_output=True)
+            os.chdir(tmpdir)
+            os.makedirs("config", exist_ok=True)
+
+            tz = timezone(timedelta(hours=8))
+            now_str = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+
+            lines = []
+            if os.path.exists(TARGET_FILE_PATH):
+                with open(TARGET_FILE_PATH, "r", encoding="utf-8") as f:
+                    lines = [l.rstrip("\n") for l in f]
+
+            # 保留 [KEYWORDS] 以上，下面全部覆盖
+            top = []
+            found = False
+            for line in lines:
+                if line.strip() == "[KEYWORDS]":
+                    top.append(line)
+                    found = True
+                    break
+                top.append(line)
+            if not found:
+                top = ["[KEYWORDS]"]
+
+            new_content = [
+                *top,
+                "",
+                f"# 更新时间：{now_str}（北京时间）",
+                *ips,
+                ""
+            ]
+
+            with open(TARGET_FILE_PATH, "w", encoding="utf-8") as f:
+                f.write("\n".join(new_content))
+
+            subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+            subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
+            subprocess.run(["git", "add", TARGET_FILE_PATH], check=True)
+            subprocess.run(["git", "commit", "-m", "Auto update whitelist"], check=True)
+            subprocess.run(["git", "push", "origin", "HEAD"], check=True)
+
+        log("✅ 已推送到另一个仓库：fogret/soute")
+    except Exception as e:
+        log(f"❌ 推送失败：{e}")
+
+if sorted_ips:
+    push_whitelist(sorted_ips)
 else:
-    print("无有效IP，不推送")
+    log("⚠️ 无有效IP，不推送")
