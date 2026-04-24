@@ -36,7 +36,7 @@ PROXY_CLEAN_PAT = re.compile(
 )
 
 def clean_github_proxy(url: str) -> str:
-    """剥离GH代理前缀"""
+    """第一步：剥离GH代理前缀，返回纯净原链接"""
     return PROXY_CLEAN_PAT.sub("", url.strip())
 
 def get_channel_set(text):
@@ -53,20 +53,20 @@ def get_channel_set(text):
     return ch_set
 
 def safe_unique_process(url_list):
-    # 1. 去除代理
-    clean_list = [clean_github_proxy(u) for u in url_list]
+    # 【步骤1】全部链接先去除代理
+    clean_all = [clean_github_proxy(u) for u in url_list]
 
-    # 2. 一模一样URL去重：重复只留1条（修复全删问题）
-    unique_list = []
-    seen_url = set()
-    for link in clean_list:
-        if link not in seen_url:
-            seen_url.add(link)
-            unique_list.append(link)
+    # 【步骤2】去完代理后，再删除一模一样重复链接，只保留1条
+    unique_after_proxy = []
+    seen = set()
+    for link in clean_all:
+        if link not in seen:
+            seen.add(link)
+            unique_after_proxy.append(link)
 
-    # 3. 按域名/IP分组
+    # 【步骤3】按 域名/IP 分组
     host_group = defaultdict(list)
-    for link in unique_list:
+    for link in unique_after_proxy:
         try:
             host = urlparse(link).netloc.lower()
         except:
@@ -74,7 +74,7 @@ def safe_unique_process(url_list):
         host_group[host].append(link)
 
     final_list = []
-    # 4. 同域名：仅判断频道是否重复，不比数量
+    # 【步骤4】同域名内：只判频道内容覆盖重复，不比数量
     for host, links in host_group.items():
         keep = []
         for link in links:
@@ -87,17 +87,18 @@ def safe_unique_process(url_list):
                 if not now_ch:
                     keep.append(link)
                     continue
-                # 检测是否内容高度重复
-                is_same = False
+
+                repeat = False
                 for exist_link in keep:
-                    exist_ch = get_channel_set(requests.get(exist_link, timeout=3).text)
-                    if len(now_ch) == 0 or len(exist_ch) == 0:
+                    exist_res = requests.get(exist_link, timeout=3)
+                    exist_ch = get_channel_set(exist_res.text)
+                    if not now_ch or not exist_ch:
                         continue
-                    # 包含关系判定为重复
+                    # 互相包含 = 内容重复，删掉
                     if now_ch.issubset(exist_ch) or exist_ch.issubset(now_ch):
-                        is_same = True
+                        repeat = True
                         break
-                if not is_same:
+                if not repeat:
                     keep.append(link)
             except:
                 keep.append(link)
@@ -222,7 +223,7 @@ def main():
             if is_valid_stream(u):
                 all_urls[u] = full_name
     url_list = list(all_urls.keys())
-    # 核心处理
+    # 按你要求：先去代理 → 再去重 → 再同域名频道去重
     url_list = safe_unique_process(url_list)
     final_urls = []
     with ThreadPoolExecutor(max_workers=10) as executor:
