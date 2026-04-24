@@ -5,10 +5,15 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout 当前仓库
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -21,15 +26,31 @@ jobs:
       - name: 运行脚本生成文件
         run: python extract_zhubo.py
 
-      - name: 推送 zhubo.txt 到目标仓库
+      # 提交本仓库的两个文件
+      - name: 提交更新到本仓库
+        run: |
+          git config user.name "github-actions"
+          git config user.email "action@github.com"
+          git add zhubo.txt invalid.txt
+          git commit -m "更新本地文件" || exit 0
+          git push
+
+      # 推送到目标仓库，只覆盖 [KEYWORDS] 下方内容
+      - name: 更新目标仓库白名单
         run: |
           git clone https://${{ secrets.YONU }}@github.com/fogret/sourt.git tmp_repo
           cd tmp_repo
-          mkdir -p config
-          cp ../zhubo.txt config/whitelist.txt
+
+          # 保留原文件头部（所有说明文字不动）
+          grep -B 100 "\[KEYWORDS\]" config/whitelist.txt | head -n -0 > header.txt
+
+          # 拼接：头部 + 空行 + 新内容
+          cat header.txt > config/whitelist.txt
+          echo "" >> config/whitelist.txt
+          cat ../zhubo.txt >> config/whitelist.txt
 
           git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
+          git config user.email "action@github.com"
           git add config/whitelist.txt
           git commit -m "Auto update whitelist" || exit 0
           git push
