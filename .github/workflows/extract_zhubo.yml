@@ -21,11 +21,10 @@ jobs:
       - name: Run extract_zhubo.py
         run: python extract_zhubo.py
 
-      # 关键：提交并推送到仓库
       - name: Commit & Push
         run: |
           git config --local user.name "github-actions"
           git config --local user.email "action@github.com"
-          git add zhubo.txt
-          git commit -m "Auto update zhubo.txt" || exit 0
+          git add zhubo.txt invalid.txt
+          git commit -m "Auto update zhubo & invalid" || exit 0
           git push
