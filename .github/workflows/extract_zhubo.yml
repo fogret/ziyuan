@@ -1,4 +1,4 @@
-name: 提取主播源RTP
+name: 提取RTP主播源
 
 on:
   workflow_dispatch:
@@ -10,12 +10,10 @@ jobs:
   extract:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout 代码
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      - name: Setup Python
+      - name: 安装 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -23,36 +21,59 @@ jobs:
       - name: 写入提取脚本
         run: |
           cat > extract_zhubo.py << 'EOF'
-          import re
-          import os
+import re
+import os
+import logging
 
-          INPUT = "urls.txt"
-          OUTPUT = "zhubo.txt"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
-          pattern = re.compile(r"http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\d+\.\d+\.\d+\.\d+:\d+", re.I)
-          seen = set()
+INPUT_PATH = "urls.txt"
+OUTPUT_PATH = "zhubo.txt"
 
-          if os.path.exists(INPUT):
-              with open(INPUT, "r", encoding="utf-8", errors="ignore") as f:
-                  content = f.read()
+URL_PATTERN = re.compile(
+    r"http://\d+\.\d+\.\d+\.\d+:\d+/rtp/\d+\.\d+\.\d+\.\d+:\d+",
+    re.IGNORECASE
+)
 
-              links = pattern.findall(content)
-              for link in links:
-                  link = link.strip()
-                  if link:
-                      seen.add(link)
+unique_links = []
+seen = set()
 
-          with open(OUTPUT, "w", encoding="utf-8") as f:
-              f.write("\n".join(sorted(seen)))
+logging.info("【开始】提取公网 RTP 转发直播源")
 
-          print(f"提取完成，共 {len(seen)} 条")
-          EOF
+if not os.path.exists(INPUT_PATH):
+    logging.error(f"【失败】未找到 urls.txt 文件，请确认文件已上传")
+else:
+    logging.info(f"【读取】成功加载 urls.txt")
+    with open(INPUT_PATH, "r", encoding="utf-8", errors="ignore") as f:
+        content = f.read()
 
-      - name: 运行提取
+    raw_links = URL_PATTERN.findall(content)
+    logging.info(f"【匹配】原始匹配到链接：{len(raw_links)} 条")
+
+    for link in raw_links:
+        link = link.strip()
+        if link and link not in seen:
+            seen.add(link)
+            unique_links.append(link)
+
+    logging.info(f"【去重】最终有效链接：{len(unique_links)} 条")
+
+with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+    f.write("\n".join(unique_links))
+
+logging.info(f"【写入】已生成 {OUTPUT_PATH}")
+logging.info(f"【完成】RTP 源提取任务结束")
+EOF
+
+      - name: 运行提取脚本
         run: python extract_zhubo.py
 
-      - name: 上传结果
+      - name: 上传结果文件
         uses: actions/upload-artifact@v4
         with:
-          name: zhubo
+          name: zhubo_result
           path: zhubo.txt
