@@ -26,7 +26,7 @@ jobs:
       - name: 运行脚本生成文件
         run: python extract_zhubo.py
 
-      - name: 提交本仓库文件更新
+      - name: 提交本仓库文件
         run: |
           git config user.name "github-actions"
           git config user.email "action@github.com"
@@ -34,18 +34,19 @@ jobs:
           git commit -m "Update local files" || exit 0
           git push
 
-      - name: 更新目标仓库 whitelist（北京时间+完整格式）
+      - name: 只覆盖 [KEYWORDS] 下方内容
         run: |
           git clone https://${{ secrets.YONU }}@github.com/fogret/sourt.git tmp_repo
           cd tmp_repo
 
-          # 截取原有头部（保留所有注释不动）
+          # 保留完整头部：直到 KEYWORDS 区域的英文注释结束
           grep -B 100 -A 2 "# This area is the keyword whitelist" config/whitelist.txt > header.txt
 
-          # 写入头部 + 空行 + 北京时间 + IP列表
+          # 写入完整结构
           cat header.txt > config/whitelist.txt
           echo "" >> config/whitelist.txt
           echo "# 更新时间：$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')" >> config/whitelist.txt
+          echo "" >> config/whitelist.txt
           cat ../zhubo.txt >> config/whitelist.txt
 
           git config user.name "github-actions"
