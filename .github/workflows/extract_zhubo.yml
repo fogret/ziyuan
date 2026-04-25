@@ -26,7 +26,6 @@ jobs:
       - name: 运行脚本生成文件
         run: python extract_zhubo.py
 
-      # 提交本仓库的两个文件
       - name: 提交更新到本仓库
         run: |
           git config user.name "github-actions"
@@ -35,17 +34,18 @@ jobs:
           git commit -m "更新本地文件" || exit 0
           git push
 
-      # 推送到目标仓库，只覆盖 [KEYWORDS] 下方内容
       - name: 更新目标仓库白名单
         run: |
           git clone https://${{ secrets.YONU }}@github.com/fogret/sourt.git tmp_repo
           cd tmp_repo
 
-          # 保留原文件头部（所有说明文字不动）
-          grep -B 100 "\[KEYWORDS\]" config/whitelist.txt | head -n -0 > header.txt
+          # 提取到 [KEYWORDS] 为止的头部
+          sed '/\[KEYWORDS\]/q' config/whitelist.txt > header.txt
 
-          # 拼接：头部 + 空行 + 新内容
+          # 重新组合：头部 + 空三行 + 新内容
           cat header.txt > config/whitelist.txt
+          echo "" >> config/whitelist.txt
+          echo "" >> config/whitelist.txt
           echo "" >> config/whitelist.txt
           cat ../zhubo.txt >> config/whitelist.txt
 
