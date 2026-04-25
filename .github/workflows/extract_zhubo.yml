@@ -26,31 +26,29 @@ jobs:
       - name: 运行脚本生成文件
         run: python extract_zhubo.py
 
-      - name: 提交本仓库文件
+      - name: 提交更新到本仓库
         run: |
           git config user.name "github-actions"
           git config user.email "action@github.com"
           git add zhubo.txt invalid.txt
-          git commit -m "Update local files" || exit 0
+          git commit -m "更新本地文件" || exit 0
           git push
 
-      - name: 只覆盖 [KEYWORDS] 下方内容
+      - name: 更新目标仓库白名单
         run: |
           git clone https://${{ secrets.YONU }}@github.com/fogret/sourt.git tmp_repo
           cd tmp_repo
 
-          # 保留完整头部：直到 KEYWORDS 区域的英文注释结束
-          grep -B 100 -A 2 "# This area is the keyword whitelist" config/whitelist.txt > header.txt
+          # 保留前 19 行（所有说明 + KEYWORDS + 下面三行）
+          head -n 19 config/whitelist.txt > header.txt
 
-          # 写入完整结构
+          # 重写文件：前19行不动 + 更新时间(北京时间) + IP列表
           cat header.txt > config/whitelist.txt
-          echo "" >> config/whitelist.txt
           echo "# 更新时间：$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')" >> config/whitelist.txt
-          echo "" >> config/whitelist.txt
           cat ../zhubo.txt >> config/whitelist.txt
 
           git config user.name "github-actions"
-          git config user.email "action@github.com"
+          git config user.email "github-actions@users.noreply.github.com"
           git add config/whitelist.txt
           git commit -m "Auto update whitelist" || exit 0
           git push
