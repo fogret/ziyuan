@@ -26,44 +26,31 @@ jobs:
       - name: 运行脚本生成文件
         run: python extract_zhubo.py
 
-      - name: 提交本仓库文件更新
+      - name: 提交本仓库文件
         run: |
           git config user.name "github-actions"
           git config user.email "action@github.com"
           git add zhubo.txt invalid.txt
-          git commit -m "更新本地文件" || echo "本仓库无变化，跳过提交"
-          git push || echo "本仓库推送失败，继续执行"
+          git commit -m "Update local files" || exit 0
+          git push
 
-      - name: 更新目标仓库白名单（严格格式+北京时间）
+      - name: 只覆盖 [KEYWORDS] 下方内容
         run: |
-          # 先检查 PAT 和仓库地址是否正确
-          git clone https://${{ secrets.YONU }}@github.com/fogret/sourt.git tmp_repo || {
-            echo "❌ 克隆失败，请检查 secrets.YONU 和仓库地址是否正确"
-            exit 1
-          }
+          git clone https://${{ secrets.YONU }}@github.com/fogret/sourt.git tmp_repo
           cd tmp_repo
 
-          # 1. 保留 [KEYWORDS] 及下面的两行注释（不动前三行）
-          # 找到 [KEYWORDS] 的行号
-          KEYWORDS_LINE=$(grep -n "\[KEYWORDS\]" config/whitelist.txt | cut -d: -f1)
-          if [ -z "$KEYWORDS_LINE" ]; then
-            echo "❌ 未找到 [KEYWORDS] 标记"
-            exit 1
-          fi
-          # 保留到 KEYWORDS_LINE + 2（即 KEYWORDS 行 + 下面两行注释）
-          HEAD_LINES=$((KEYWORDS_LINE + 2))
-          head -n $HEAD_LINES config/whitelist.txt > header.txt
+          # 提取到 [KEYWORDS] 为止的头部（保留说明，不动）
+          sed '/\[KEYWORDS\]/q' config/whitelist.txt > header.txt
 
-          # 2. 重新组合文件：头部 + 空行 + 北京时间 + IP列表
+          # 重新生成文件：头部 + 三行空行 + 新IP内容
           cat header.txt > config/whitelist.txt
           echo "" >> config/whitelist.txt
-          echo "# 更新时间：$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')" >> config/whitelist.txt
+          echo "" >> config/whitelist.txt
           echo "" >> config/whitelist.txt
           cat ../zhubo.txt >> config/whitelist.txt
 
-          # 3. 提交推送（加错误处理）
           git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
+          git config user.email "action@github.com"
           git add config/whitelist.txt
-          git commit -m "Auto update whitelist" || echo "目标仓库无变化，跳过提交"
-          git push || echo "❌ 目标仓库推送失败，请检查 PAT 权限"
+          git commit -m "Auto update whitelist" || exit 0
+          git push
